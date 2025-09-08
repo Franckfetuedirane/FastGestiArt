@@ -2,95 +2,130 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* GestiArt Design System - Artisan-inspired warm colors and design tokens */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
+    /* Base colors */
+    --background: 28 20% 98%;
+    --foreground: 20 14.3% 4.1%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 20 14.3% 4.1%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 20 14.3% 4.1%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Warm Terracotta */
+    --primary: 14 77% 52%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --primary-light: 14 77% 62%;
+    --primary-dark: 14 77% 42%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Warm Brown/Wood */
+    --secondary: 25 50% 25%;
+    --secondary-foreground: 60 9.1% 97.8%;
+    --secondary-light: 25 50% 35%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Accent - Golden */
+    --accent: 38 92% 50%;
+    --accent-foreground: 25 50% 15%;
+    --accent-light: 38 92% 60%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Success - Natural Green */
+    --success: 142 76% 36%;
+    --success-foreground: 355.7 100% 97.3%;
+
+    /* Warning - Warm Orange */
+    --warning: 21 90% 48%;
+    --warning-foreground: 355.7 100% 97.3%;
+
+    /* Destructive - Warm Red */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Neutral tones */
+    --muted: 28 20% 95%;
+    --muted-foreground: 25 5.3% 44.7%;
+    --border: 28 15% 88%;
+    --input: 28 15% 88%;
+    --ring: 14 77% 52%;
+
+    /* Sidebar */
+    --sidebar-background: 28 25% 96%;
+    --sidebar-foreground: 25 5.3% 44.7%;
+    --sidebar-primary: 14 77% 52%;
+    --sidebar-primary-foreground: 355.7 100% 97.3%;
+    --sidebar-accent: 28 20% 92%;
+    --sidebar-accent-foreground: 25 5.3% 44.7%;
+    --sidebar-border: 28 15% 88%;
+    --sidebar-ring: 14 77% 52%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(14 77% 52%), hsl(21 90% 48%));
+    --gradient-secondary: linear-gradient(135deg, hsl(25 50% 25%), hsl(25 50% 35%));
+    --gradient-warm: linear-gradient(135deg, hsl(28 20% 98%), hsl(28 20% 95%));
+    --gradient-accent: linear-gradient(135deg, hsl(38 92% 50%), hsl(38 92% 60%));
+
+    /* Shadows with warm tones */
+    --shadow-soft: 0 2px 8px hsl(25 50% 25% / 0.08);
+    --shadow-medium: 0 4px 16px hsl(25 50% 25% / 0.12);
+    --shadow-strong: 0 8px 24px hsl(25 50% 25% / 0.16);
+    --shadow-primary: 0 4px 16px hsl(14 77% 52% / 0.25);
+
+    /* Border radius */
+    --radius: 0.75rem;
+    --radius-sm: 0.5rem;
+    --radius-lg: 1rem;
+  }
+
+  .dark {
+    --background: 25 50% 8%;
+    --foreground: 28 20% 95%;
+    --card: 25 50% 10%;
+    --card-foreground: 28 20% 95%;
+    --popover: 25 50% 10%;
+    --popover-foreground: 28 20% 95%;
+
+    --primary: 14 77% 52%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --primary-light: 14 77% 62%;
+    --primary-dark: 14 77% 42%;
+
+    --secondary: 25 50% 15%;
+    --secondary-foreground: 28 20% 95%;
+    --secondary-light: 25 50% 25%;
+
+    --accent: 38 92% 50%;
+    --accent-foreground: 25 50% 15%;
+    --accent-light: 38 92% 60%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 355.7 100% 97.3%;
+
+    --warning: 21 90% 48%;
+    --warning-foreground: 355.7 100% 97.3%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --muted: 25 50% 12%;
+    --muted-foreground: 25 5.3% 65%;
+    --border: 25 50% 18%;
+    --input: 25 50% 18%;
+    --ring: 14 77% 52%;
 
-    --radius: 0.5rem;
+    --sidebar-background: 25 50% 6%;
+    --sidebar-foreground: 28 20% 85%;
+    --sidebar-primary: 14 77% 52%;
+    --sidebar-primary-foreground: 355.7 100% 97.3%;
+    --sidebar-accent: 25 50% 12%;
+    --sidebar-accent-foreground: 28 20% 85%;
+    --sidebar-border: 25 50% 18%;
+    --sidebar-ring: 14 77% 52%;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --gradient-primary: linear-gradient(135deg, hsl(14 77% 52%), hsl(21 90% 48%));
+    --gradient-secondary: linear-gradient(135deg, hsl(25 50% 15%), hsl(25 50% 25%));
+    --gradient-warm: linear-gradient(135deg, hsl(25 50% 8%), hsl(25 50% 12%));
+    --gradient-accent: linear-gradient(135deg, hsl(38 92% 50%), hsl(38 92% 60%));
   }
 }
 
@@ -100,6 +135,118 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  h1 {
+    @apply text-3xl lg:text-4xl;
+  }
+
+  h2 {
+    @apply text-2xl lg:text-3xl;
+  }
+
+  h3 {
+    @apply text-xl lg:text-2xl;
+  }
+}
+
+@layer components {
+  /* Custom component styles */
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary to-primary-light text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-300;
+  }
+
+  .btn-secondary {
+    @apply bg-gradient-to-r from-secondary to-secondary-light text-secondary-foreground shadow-lg shadow-secondary/20 hover:shadow-secondary/30 transition-all duration-300;
+  }
+
+  .btn-accent {
+    @apply bg-gradient-to-r from-accent to-accent-light text-accent-foreground shadow-lg shadow-accent/25 hover:shadow-accent/40 transition-all duration-300;
+  }
+
+  .card-elegant {
+    @apply bg-card border border-border rounded-lg shadow-soft hover:shadow-medium transition-all duration-300;
+  }
+
+  .glass-effect {
+    @apply backdrop-blur-md bg-background/80 border border-border/50;
+  }
+
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+}
+
+@layer utilities {
+  .text-gradient-primary {
+    @apply bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent;
+  }
+
+  .text-gradient-accent {
+    @apply bg-gradient-to-r from-accent to-accent-light bg-clip-text text-transparent;
+  }
+
+  .shadow-primary {
+    box-shadow: var(--shadow-primary);
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-medium {
+    box-shadow: var(--shadow-medium);
+  }
+
+  .shadow-strong {
+    box-shadow: var(--shadow-strong);
+  }
+}
+
+/* Keyframes for animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }

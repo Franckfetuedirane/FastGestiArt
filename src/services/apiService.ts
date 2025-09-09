@@ -225,3 +225,43 @@ export const statsAPI = {
     };
   }
 };
+
+// Services pour les utilisateurs
+export const usersAPI = {
+  getAll: async (): Promise<User[]> => {
+    // En production: GET /users/
+    return mockUsers;
+  },
+  
+  getById: async (id: string): Promise<User | null> => {
+    // En production: GET /users/{id}/
+    return mockUsers.find(u => u.id === id) || null;
+  },
+  
+  create: async (user: Omit<User, 'id'>): Promise<User> => {
+    // En production: POST /users/
+    const newUser = { ...user, id: `user-${Date.now()}` };
+    mockUsers.push(newUser);
+    return newUser;
+  },
+  
+  update: async (id: string, user: Partial<User>): Promise<User | null> => {
+    // En production: PUT /users/{id}/
+    const index = mockUsers.findIndex(u => u.id === id);
+    if (index !== -1) {
+      mockUsers[index] = { ...mockUsers[index], ...user };
+      return mockUsers[index];
+    }
+    return null;
+  },
+  
+  delete: async (id: string): Promise<boolean> => {
+    // En production: DELETE /users/{id}/
+    const index = mockUsers.findIndex(u => u.id === id);
+    if (index !== -1) {
+      mockUsers.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+};

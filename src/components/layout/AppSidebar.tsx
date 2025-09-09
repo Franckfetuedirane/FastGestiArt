@@ -9,7 +9,8 @@ import {
   FileBarChart,
   UserCircle,
   LogOut,
-  Palette
+  Palette,
+  Shield
 } from 'lucide-react';
 import {
   Sidebar,
@@ -40,9 +41,9 @@ const adminNavItems = [
     icon: Package,
   },
   {
-    title: 'Catégories',
-    url: '/admin/categories',
-    icon: FolderOpen,
+    title: 'Artisans',
+    url: '/admin/artisans',
+    icon: Users,
   },
   {
     title: 'Ventes',
@@ -50,9 +51,14 @@ const adminNavItems = [
     icon: ShoppingCart,
   },
   {
-    title: 'Artisans',
-    url: '/admin/artisans',
-    icon: Users,
+    title: 'Catégories',
+    url: '/admin/categories',
+    icon: FolderOpen,
+  },
+  {
+    title: 'Utilisateurs',
+    url: '/admin/users',
+    icon: Shield,
   },
   {
     title: 'Rapports',

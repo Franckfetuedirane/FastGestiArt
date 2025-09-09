@@ -1,44 +1,98 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus, ShoppingCart } from 'lucide-react';
+import { SaleTable } from '@/components/crud/SaleTable';
+import { Sale } from '@/types';
+import { salesAPI } from '@/services/apiService';
+import { useToast } from '@/hooks/use-toast';
 
 const SalesPage: React.FC = () => {
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadSales();
+  }, []);
+
+  const loadSales = async () => {
+    try {
+      const data = await salesAPI.getAll();
+      setSales(data);
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger la liste des ventes.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAdd = () => {
+    toast({
+      title: "Fonctionnalité à venir",
+      description: "La création de vente sera bientôt disponible.",
+    });
+  };
+
+  const handleEdit = (sale: Sale) => {
+    toast({
+      title: "Fonctionnalité à venir",
+      description: `Modification de la vente "${sale.numeroFacture}" sera bientôt disponible.`,
+    });
+  };
+
+  const handleView = (sale: Sale) => {
+    toast({
+      title: "Détails",
+      description: `Visualisation des détails de la vente "${sale.numeroFacture}".`,
+    });
+  };
+
+  const handleViewInvoice = (sale: Sale) => {
+    toast({
+      title: "Facture",
+      description: `Affichage de la facture "${sale.numeroFacture}".`,
+    });
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await salesAPI.delete(id);
+      setSales(prev => prev.filter(s => s.id !== id));
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer la vente.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <MainLayout title="Gestion des Ventes" subtitle="Suivez toutes les transactions">
+        <div className="animate-pulse space-y-4">
+          <div className="h-64 bg-muted rounded-lg"></div>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout 
       title="Gestion des Ventes" 
       subtitle="Suivez toutes les transactions"
     >
-      <div className="space-y-6">
-        {/* Header Actions */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <ShoppingCart className="h-6 w-6 text-primary" />
-            <h2 className="text-xl font-semibold">Ventes</h2>
-          </div>
-          <Button className="btn-primary">
-            <Plus className="h-4 w-4 mr-2" />
-            Nouvelle vente
-          </Button>
-        </div>
-
-        {/* Sales Table Placeholder */}
-        <Card className="card-elegant">
-          <CardHeader>
-            <CardTitle>Historique des Ventes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center h-64 text-muted-foreground">
-              <div className="text-center">
-                <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg mb-2">Gestion des ventes</p>
-                <p className="text-sm">Interface CRUD complète avec génération de factures à implémenter</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <SaleTable
+        sales={sales}
+        onAdd={handleAdd}
+        onEdit={handleEdit}
+        onView={handleView}
+        onViewInvoice={handleViewInvoice}
+        onDelete={handleDelete}
+      />
     </MainLayout>
   );
 };

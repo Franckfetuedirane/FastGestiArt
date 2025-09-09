@@ -15,6 +15,7 @@ import ProductsPage from "./pages/admin/ProductsPage";
 import CategoriesPage from "./pages/admin/CategoriesPage";
 import SalesPage from "./pages/admin/SalesPage";
 import ArtisansPage from "./pages/admin/ArtisansPage";
+import UsersPage from "./pages/admin/UsersPage";
 import ReportsPage from "./pages/admin/ReportsPage";
 import NotFound from "./pages/NotFound";
 
@@ -55,6 +56,11 @@ const App = () => (
             <Route path="/admin/artisans" element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <ArtisansPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/users" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <UsersPage />
               </ProtectedRoute>
             } />
             <Route path="/admin/rapports" element={

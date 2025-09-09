@@ -1,44 +1,90 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus, Users } from 'lucide-react';
+import { ArtisanTable } from '@/components/crud/ArtisanTable';
+import { ArtisanProfile } from '@/types';
+import { artisansAPI } from '@/services/apiService';
+import { useToast } from '@/hooks/use-toast';
 
 const ArtisansPage: React.FC = () => {
+  const [artisans, setArtisans] = useState<ArtisanProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadArtisans();
+  }, []);
+
+  const loadArtisans = async () => {
+    try {
+      const data = await artisansAPI.getAll();
+      setArtisans(data);
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger la liste des artisans.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAdd = () => {
+    toast({
+      title: "Fonctionnalité à venir",
+      description: "La création d'artisan sera bientôt disponible.",
+    });
+  };
+
+  const handleEdit = (artisan: ArtisanProfile) => {
+    toast({
+      title: "Fonctionnalité à venir",
+      description: `Modification de ${artisan.prenom} ${artisan.nom} sera bientôt disponible.`,
+    });
+  };
+
+  const handleView = (artisan: ArtisanProfile) => {
+    toast({
+      title: "Détails",
+      description: `Visualisation des détails de ${artisan.prenom} ${artisan.nom}.`,
+    });
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await artisansAPI.delete(id);
+      setArtisans(prev => prev.filter(a => a.id !== id));
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer l'artisan.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <MainLayout title="Gestion des Artisans" subtitle="Gérez la communauté d'artisans">
+        <div className="animate-pulse space-y-4">
+          <div className="h-64 bg-muted rounded-lg"></div>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout 
       title="Gestion des Artisans" 
       subtitle="Gérez la communauté d'artisans"
     >
-      <div className="space-y-6">
-        {/* Header Actions */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Users className="h-6 w-6 text-primary" />
-            <h2 className="text-xl font-semibold">Artisans</h2>
-          </div>
-          <Button className="btn-primary">
-            <Plus className="h-4 w-4 mr-2" />
-            Ajouter un artisan
-          </Button>
-        </div>
-
-        {/* Artisans Grid Placeholder */}
-        <Card className="card-elegant">
-          <CardHeader>
-            <CardTitle>Liste des Artisans</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center h-64 text-muted-foreground">
-              <div className="text-center">
-                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg mb-2">Gestion des artisans</p>
-                <p className="text-sm">Interface CRUD complète à implémenter</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <ArtisanTable
+        artisans={artisans}
+        onAdd={handleAdd}
+        onEdit={handleEdit}
+        onView={handleView}
+        onDelete={handleDelete}
+      />
     </MainLayout>
   );
 };

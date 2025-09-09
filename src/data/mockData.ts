@@ -8,6 +8,11 @@ export const mockUsers: User[] = [
     role: 'admin'
   },
   {
+    id: 'admin-2',
+    email: 'admin.assistant@gestiart.com',
+    role: 'admin'
+  },
+  {
     id: 'artisan-1',
     email: 'marie.dubois@gmail.com',
     role: 'artisan',
@@ -55,6 +60,23 @@ export const mockUsers: User[] = [
       adresse: '789 Boulevard de l\'Artisanat, Saint-Louis',
       departement: 'Saint-Louis',
       dateInscription: '2023-02-10',
+      photo: '/api/placeholder/150/150'
+    }
+  },
+  {
+    id: 'artisan-4',
+    email: 'moussa.niang@gmail.com',
+    role: 'artisan',
+    profile: {
+      id: 'artisan-4',
+      nom: 'Niang',
+      prenom: 'Moussa',
+      specialite: 'Textile',
+      telephone: '221-70-444-5678',
+      email: 'moussa.niang@gmail.com',
+      adresse: '321 Rue du Textile, Kaolack',
+      departement: 'Kaolack',
+      dateInscription: '2023-04-05',
       photo: '/api/placeholder/150/150'
     }
   }

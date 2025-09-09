@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Product, ArtisanProfile, Category } from '@/types';
 import { artisansAPI, categoriesAPI } from '@/services/apiService';
+import { ImageUpload } from '@/components/ui/image-upload';
 
 const productSchema = z.object({
   nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
@@ -58,6 +59,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 }) => {
   const [artisans, setArtisans] = useState<ArtisanProfile[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [formData, setFormData] = useState({
+    nom: '',
+    description: '',
+    categorie: '',
+    prix: 0,
+    stock: 0,
+    artisanId: '',
+    image: '/api/placeholder/300/300'
+  });
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -90,6 +100,34 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       loadData();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (product) {
+      setFormData({
+        nom: product.nom,
+        description: product.description,
+        categorie: product.categorie,
+        prix: product.prix,
+        stock: product.stock,
+        artisanId: product.artisanId,
+        image: product.image
+      });
+    } else {
+      setFormData({
+        nom: '',
+        description: '',
+        categorie: '',
+        prix: 0,
+        stock: 0,
+        artisanId: '',
+        image: '/api/placeholder/300/300'
+      });
+    }
+  }, [product]);
+
+  const handleImageUpload = (imageUrl: string) => {
+    setFormData(prev => ({ ...prev, image: imageUrl }));
+  };
 
   const handleSubmit = async (data: ProductFormData) => {
     await onSubmit({

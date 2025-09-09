@@ -35,9 +35,10 @@ export interface Product {
 
 export interface Category {
   id: string;
-  nom: string;
+  name: string;
   description: string;
-  dateCreation: string;
+  createdAt: string;  // Changed from Date to string for mock data compatibility
+  updatedAt: string;  // Added to match the previous implementation
 }
 
 export interface Sale {

@@ -1,0 +1,38 @@
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.report-table th,
+.report-table td {
+  border: 1px solid #000;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.report-table th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+}
+
+.report-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.report-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.report-footer {
+  margin-top: 2rem;
+}
+
+@media print {
+  .report-container {
+    padding: 2cm;
+  }
+}

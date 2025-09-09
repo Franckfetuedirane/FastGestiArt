@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,6 +18,13 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { User } from '@/types';
 
 const userSchema = z.object({
@@ -35,7 +42,7 @@ interface UserFormProps {
   user?: User | null;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { email: string; password?: string }) => Promise<void>;
+  onSubmit: (data: { email: string; password?: string; role: 'admin' | 'artisan' }) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -55,6 +62,18 @@ export const UserForm: React.FC<UserFormProps> = ({
     },
   });
 
+  const [role, setRole] = useState<'admin' | 'artisan'>('admin');
+
+  useEffect(() => {
+    if (user) {
+      form.setValue('email', user.email);
+      setRole(user.role);
+    } else {
+      form.setValue('email', '');
+      setRole('admin');
+    }
+  }, [user, form]);
+
   const handleSubmit = async (data: UserFormData) => {
     const submitData: { email: string; password?: string } = {
       email: data.email,
@@ -65,7 +84,7 @@ export const UserForm: React.FC<UserFormProps> = ({
       submitData.password = data.password;
     }
 
-    await onSubmit(submitData);
+    await onSubmit({ ...submitData, role });
     form.reset();
     onClose();
   };
@@ -142,6 +161,22 @@ export const UserForm: React.FC<UserFormProps> = ({
                 </FormItem>
               )}
             />
+
+            <FormItem>
+              <FormLabel>Rôle</FormLabel>
+              <Select
+                value={role}
+                onValueChange={setRole}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez un rôle" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Administrateur</SelectItem>
+                  <SelectItem value="artisan">Artisan</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormItem>
 
             <div className="bg-muted/50 p-3 rounded-lg">
               <p className="text-sm text-muted-foreground">

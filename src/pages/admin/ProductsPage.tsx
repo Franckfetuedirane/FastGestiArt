@@ -1,27 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ProductTable } from '@/components/crud/ProductTable';
-import { Product } from '@/types';
-import { productsAPI } from '@/services/apiService';
+import { ProductForm } from '@/components/forms/ProductForm';
+import { Product, Category, ArtisanProfile } from '@/types';
+import { productsAPI, categoriesAPI, artisansAPI } from '@/services/apiService';
 import { useToast } from '@/hooks/use-toast';
 
 const ProductsPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [artisans, setArtisans] = useState<ArtisanProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadProducts();
+    loadInitialData();
   }, []);
 
-  const loadProducts = async () => {
+  const loadInitialData = async () => {
     try {
-      const data = await productsAPI.getAll();
-      setProducts(data);
+      const [productsData, categoriesData, artisansData] = await Promise.all([
+        productsAPI.getAll(),
+        categoriesAPI.getAll(),
+        artisansAPI.getAll()
+      ]);
+      setProducts(productsData);
+      setCategories(categoriesData);
+      setArtisans(artisansData);
     } catch (error) {
       toast({
         title: "Erreur",
-        description: "Impossible de charger la liste des produits.",
+        description: "Impossible de charger les données.",
         variant: "destructive"
       });
     } finally {
@@ -30,30 +41,51 @@ const ProductsPage: React.FC = () => {
   };
 
   const handleAdd = () => {
-    toast({
-      title: "Fonctionnalité à venir",
-      description: "La création de produit sera bientôt disponible.",
-    });
+    setEditingProduct(null);
+    setIsFormOpen(true);
   };
 
   const handleEdit = (product: Product) => {
-    toast({
-      title: "Fonctionnalité à venir",
-      description: `Modification du produit "${product.nom}" sera bientôt disponible.`,
-    });
+    setEditingProduct(product);
+    setIsFormOpen(true);
   };
 
-  const handleView = (product: Product) => {
-    toast({
-      title: "Détails",
-      description: `Visualisation des détails du produit "${product.nom}".`,
-    });
+  const handleSubmit = async (data: Omit<Product, 'id' | 'dateCreation'>) => {
+    try {
+      if (editingProduct) {
+        const updatedProduct = await productsAPI.update(editingProduct.id, data);
+        setProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
+        toast({
+          title: "Succès",
+          description: "Le produit a été modifié avec succès.",
+        });
+      } else {
+        const newProduct = await productsAPI.create(data);
+        setProducts(prev => [...prev, newProduct]);
+        toast({
+          title: "Succès",
+          description: "Le produit a été créé avec succès.",
+        });
+      }
+      setIsFormOpen(false);
+      setEditingProduct(null);
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder le produit.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await productsAPI.delete(id);
       setProducts(prev => prev.filter(p => p.id !== id));
+      toast({
+        title: "Succès",
+        description: "Le produit a été supprimé avec succès.",
+      });
     } catch (error) {
       toast({
         title: "Erreur",
@@ -82,8 +114,19 @@ const ProductsPage: React.FC = () => {
         products={products}
         onAdd={handleAdd}
         onEdit={handleEdit}
-        onView={handleView}
         onDelete={handleDelete}
+      />
+
+      <ProductForm
+        product={editingProduct}
+        categories={categories}
+        artisans={artisans}
+        isOpen={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false);
+          setEditingProduct(null);
+        }}
+        onSubmit={handleSubmit}
       />
     </MainLayout>
   );

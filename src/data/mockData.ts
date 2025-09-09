@@ -24,7 +24,7 @@ export const mockUsers: User[] = [
       telephone: '221-77-123-4567',
       email: 'marie.dubois@gmail.com',
       adresse: '123 Rue de la Céramique, Dakar',
-      departement: 'Dakar',
+      departement: 'MIFI',
       dateInscription: '2023-01-15',
       photo: '/api/placeholder/150/150'
     }
@@ -40,8 +40,8 @@ export const mockUsers: User[] = [
       specialite: 'Sculpture sur bois',
       telephone: '221-76-987-6543',
       email: 'ibrahim.diallo@gmail.com',
-      adresse: '456 Avenue des Artisans, Thiès',
-      departement: 'Thiès',
+      adresse: '456 Avenue des Artisans, MIFI',
+      departement: 'MIFI',
       dateInscription: '2023-03-20',
       photo: '/api/placeholder/150/150'
     }
@@ -57,8 +57,8 @@ export const mockUsers: User[] = [
       specialite: 'Bijouterie',
       telephone: '221-78-555-1234',
       email: 'fatou.sene@gmail.com',
-      adresse: '789 Boulevard de l\'Artisanat, Saint-Louis',
-      departement: 'Saint-Louis',
+      adresse: '789 Boulevard de l\'Artisanat, MIFI',
+      departement: 'MIFI',
       dateInscription: '2023-02-10',
       photo: '/api/placeholder/150/150'
     }
@@ -74,8 +74,8 @@ export const mockUsers: User[] = [
       specialite: 'Textile',
       telephone: '221-70-444-5678',
       email: 'moussa.niang@gmail.com',
-      adresse: '321 Rue du Textile, Kaolack',
-      departement: 'Kaolack',
+      adresse: '321 Rue du Textile, MIFI',
+      departement: 'MIFI',
       dateInscription: '2023-04-05',
       photo: '/api/placeholder/150/150'
     }
@@ -89,33 +89,38 @@ export const mockArtisans: ArtisanProfile[] = mockUsers
 export const mockCategories: Category[] = [
   {
     id: 'cat-1',
-    nom: 'Poterie',
+    name: 'Poterie',
     description: 'Articles en céramique et terre cuite',
-    dateCreation: '2023-01-01'
+    createdAt: '2023-01-01',
+    updatedAt: '2023-01-01'
   },
   {
     id: 'cat-2',
-    nom: 'Sculpture',
+    name: 'Sculpture',
     description: 'Sculptures en bois, pierre et métal',
-    dateCreation: '2023-01-01'
+    createdAt: '2023-01-01',
+    updatedAt: '2023-01-01'
   },
   {
     id: 'cat-3',
-    nom: 'Bijouterie',
+    name: 'Bijouterie',
     description: 'Bijoux traditionnels et contemporains',
-    dateCreation: '2023-01-01'
+    createdAt: '2023-01-01',
+    updatedAt: '2023-01-01'
   },
   {
     id: 'cat-4',
-    nom: 'Textile',
+    name: 'Textile',
     description: 'Tissus, vêtements et accessoires textiles',
-    dateCreation: '2023-01-01'
+    createdAt: '2023-01-01',
+    updatedAt: '2023-01-01'
   },
   {
     id: 'cat-5',
-    nom: 'Maroquinerie',
+    name: 'Maroquinerie',
     description: 'Articles en cuir fait main',
-    dateCreation: '2023-01-01'
+    createdAt: '2023-01-01',
+    updatedAt: '2023-01-01'
   }
 ];
 

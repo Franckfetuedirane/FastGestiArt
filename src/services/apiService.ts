@@ -4,10 +4,10 @@ import {
   mockUsers, 
   mockArtisans, 
   mockProducts, 
-  mockCategories, 
   mockSales, 
   mockDashboardStats 
 } from '../data/mockData';
+import { productService } from './productService';
 
 // Configuration de l'API (à adapter avec l'URL de l'API Django)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
@@ -86,80 +86,74 @@ export const artisansAPI = {
   }
 };
 
-// Services pour les produits
-export const productsAPI = {
-  getAll: async (artisanId?: string): Promise<Product[]> => {
-    // En production: GET /products/ ou /products/?artisan={artisanId}
-    return artisanId 
-      ? mockProducts.filter(p => p.artisanId === artisanId)
-      : mockProducts;
-  },
-  
-  getById: async (id: string): Promise<Product | null> => {
-    // En production: GET /products/{id}/
-    return mockProducts.find(p => p.id === id) || null;
-  },
-  
-  create: async (product: Omit<Product, 'id'>): Promise<Product> => {
-    // En production: POST /products/
-    const newProduct = { ...product, id: `prod-${Date.now()}` };
-    mockProducts.push(newProduct);
-    return newProduct;
-  },
-  
-  update: async (id: string, product: Partial<Product>): Promise<Product | null> => {
-    // En production: PUT /products/{id}/
-    const index = mockProducts.findIndex(p => p.id === id);
-    if (index !== -1) {
-      mockProducts[index] = { ...mockProducts[index], ...product };
-      return mockProducts[index];
-    }
-    return null;
-  },
-  
-  delete: async (id: string): Promise<boolean> => {
-    // En production: DELETE /products/{id}/
-    const index = mockProducts.findIndex(p => p.id === id);
-    if (index !== -1) {
-      mockProducts.splice(index, 1);
-      return true;
-    }
-    return false;
-  }
-};
+// Remplacer la section des services pour les produits par une exportation du service
+export { productService };
 
 // Services pour les catégories
+const mockCategories: Category[] = [
+  {
+    id: "1",
+    name: "Poterie",
+    description: "Art de façonner l'argile",
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01")
+  },
+  {
+    id: "2",
+    name: "Bijouterie",
+    description: "Création de bijoux artisanaux",
+    createdAt: new Date("2024-01-02"),
+    updatedAt: new Date("2024-01-02")
+  },
+  {
+    id: "3",
+    name: "Sculpture",
+    description: "Art de tailler et modeler des matériaux",
+    createdAt: new Date("2024-01-03"),
+    updatedAt: new Date("2024-01-03")
+  }
+];
+
 export const categoriesAPI = {
   getAll: async (): Promise<Category[]> => {
-    // En production: GET /categories/
-    return mockCategories;
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(mockCategories), 1000);
+    });
   },
   
-  create: async (category: Omit<Category, 'id'>): Promise<Category> => {
-    // En production: POST /categories/
-    const newCategory = { ...category, id: `cat-${Date.now()}` };
-    mockCategories.push(newCategory);
-    return newCategory;
+  create: async (data: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>): Promise<Category> => {
+    return new Promise((resolve) => {
+      const newCategory = {
+        ...data,
+        id: Date.now().toString(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      mockCategories.push(newCategory);
+      setTimeout(() => resolve(newCategory), 1000);
+    });
   },
-  
-  update: async (id: string, category: Partial<Category>): Promise<Category | null> => {
-    // En production: PUT /categories/{id}/
-    const index = mockCategories.findIndex(c => c.id === id);
-    if (index !== -1) {
-      mockCategories[index] = { ...mockCategories[index], ...category };
-      return mockCategories[index];
-    }
-    return null;
+
+  update: async (id: string, data: Partial<Category>): Promise<Category> => {
+    return new Promise((resolve, reject) => {
+      const index = mockCategories.findIndex(c => c.id === id);
+      if (index === -1) reject(new Error('Category not found'));
+      
+      mockCategories[index] = {
+        ...mockCategories[index],
+        ...data,
+        updatedAt: new Date()
+      };
+      setTimeout(() => resolve(mockCategories[index]), 1000);
+    });
   },
-  
-  delete: async (id: string): Promise<boolean> => {
-    // En production: DELETE /categories/{id}/
-    const index = mockCategories.findIndex(c => c.id === id);
-    if (index !== -1) {
-      mockCategories.splice(index, 1);
-      return true;
-    }
-    return false;
+
+  delete: async (id: string): Promise<void> => {
+    return new Promise((resolve) => {
+      const index = mockCategories.findIndex(c => c.id === id);
+      if (index !== -1) mockCategories.splice(index, 1);
+      setTimeout(resolve, 1000);
+    });
   }
 };
 
@@ -265,3 +259,53 @@ export const usersAPI = {
     return false;
   }
 };
+
+// Services pour les produits
+export const productsAPI = {
+  getAll: async (): Promise<Product[]> => {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(mockProducts), 1000);
+    });
+  },
+
+  create: async (data: Omit<Product, 'id' | 'dateCreation'>): Promise<Product> => {
+    const newProduct = {
+      ...data,
+      id: `prod-${Date.now()}`,
+      dateCreation: new Date().toISOString()
+    };
+    mockProducts.push(newProduct);
+    return newProduct;
+  },
+
+  update: async (id: string, data: Partial<Product>): Promise<Product> => {
+    const index = mockProducts.findIndex(p => p.id === id);
+    if (index === -1) throw new Error('Product not found');
+    
+    mockProducts[index] = { ...mockProducts[index], ...data };
+    return mockProducts[index];
+  },
+
+  delete: async (id: string): Promise<void> => {
+    const index = mockProducts.findIndex(p => p.id === id);
+    if (index !== -1) {
+      mockProducts.splice(index, 1);
+    }
+  },
+
+  updateStock: async (id: string, quantity: number): Promise<Product> => {
+    const index = mockProducts.findIndex(p => p.id === id);
+    if (index === -1) throw new Error('Product not found');
+    
+    const newStock = mockProducts[index].stock + quantity;
+    if (newStock < 0) throw new Error('Stock insuffisant');
+    
+    mockProducts[index] = {
+      ...mockProducts[index],
+      stock: newStock
+    };
+    return mockProducts[index];
+  }
+};
+
+// export { salesAPI, artisansAPI, categoriesAPI };

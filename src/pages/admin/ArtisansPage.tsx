@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ArtisanTable } from '@/components/crud/ArtisanTable';
+import { ViewArtisanModal } from '@/components/modals/ViewArtisanModal';
+import { ArtisanForm } from '@/components/forms/ArtisanForm';
 import { ArtisanProfile } from '@/types';
 import { artisansAPI } from '@/services/apiService';
 import { useToast } from '@/hooks/use-toast';
@@ -8,6 +10,11 @@ import { useToast } from '@/hooks/use-toast';
 const ArtisansPage: React.FC = () => {
   const [artisans, setArtisans] = useState<ArtisanProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [viewingArtisan, setViewingArtisan] = useState<ArtisanProfile | null>(null);
+  const [editingArtisan, setEditingArtisan] = useState<ArtisanProfile | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,24 +37,18 @@ const ArtisansPage: React.FC = () => {
   };
 
   const handleAdd = () => {
-    toast({
-      title: "Fonctionnalité à venir",
-      description: "La création d'artisan sera bientôt disponible.",
-    });
+    setEditingArtisan(null);
+    setIsFormOpen(true);
   };
 
   const handleEdit = (artisan: ArtisanProfile) => {
-    toast({
-      title: "Fonctionnalité à venir",
-      description: `Modification de ${artisan.prenom} ${artisan.nom} sera bientôt disponible.`,
-    });
+    setEditingArtisan(artisan);
+    setIsFormOpen(true);
   };
 
   const handleView = (artisan: ArtisanProfile) => {
-    toast({
-      title: "Détails",
-      description: `Visualisation des détails de ${artisan.prenom} ${artisan.nom}.`,
-    });
+    setViewingArtisan(artisan);
+    setIsViewOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -73,6 +74,40 @@ const ArtisansPage: React.FC = () => {
     );
   }
 
+  const handleSubmit = async (data: Omit<ArtisanProfile, 'id' | 'dateInscription'>) => {
+    setIsSubmitting(true);
+    try {
+      if (editingArtisan) {
+        await artisansAPI.update(editingArtisan.id, data);
+        setArtisans(prev => prev.map(a => 
+          a.id === editingArtisan.id 
+            ? { ...a, ...data }
+            : a
+        ));
+        toast({
+          title: "Artisan modifié",
+          description: `${data.prenom} ${data.nom} a été modifié avec succès.`,
+        });
+      } else {
+        const newArtisan = await artisansAPI.create(data);
+        setArtisans(prev => [...prev, newArtisan]);
+        toast({
+          title: "Artisan créé",
+          description: `${data.prenom} ${data.nom} a été créé avec succès.`,
+        });
+      }
+      setIsFormOpen(false);
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder l'artisan.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <MainLayout 
       title="Gestion des Artisans" 
@@ -84,6 +119,20 @@ const ArtisansPage: React.FC = () => {
         onEdit={handleEdit}
         onView={handleView}
         onDelete={handleDelete}
+      />
+      
+      <ViewArtisanModal
+        artisan={viewingArtisan}
+        isOpen={isViewOpen}
+        onClose={() => setIsViewOpen(false)}
+      />
+      
+      <ArtisanForm
+        artisan={editingArtisan}
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={handleSubmit}
+        isLoading={isSubmitting}
       />
     </MainLayout>
   );

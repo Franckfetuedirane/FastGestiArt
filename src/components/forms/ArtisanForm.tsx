@@ -38,7 +38,7 @@ interface ArtisanFormProps {
   artisan?: ArtisanProfile | null;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Omit<ArtisanProfile, 'id' | 'dateInscription'>) => Promise<void>;
+  onSubmit: (data: Omit<ArtisanProfile, 'id' | 'dateInscription' | 'dateCreation' | 'updatedAt'>) => Promise<void>;
   isLoading?: boolean;
 }
 

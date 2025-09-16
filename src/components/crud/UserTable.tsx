@@ -49,7 +49,7 @@ export const UserTable: React.FC<UserTableProps> = ({
 
   const filteredUsers = users.filter(user =>
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.user_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (user.profile && (
       user.profile.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.profile.prenom.toLowerCase().includes(searchTerm.toLowerCase())
@@ -72,8 +72,8 @@ export const UserTable: React.FC<UserTableProps> = ({
     });
   };
 
-  const getRoleBadge = (role: string) => {
-    switch (role) {
+  const getRoleBadge = (user_type: string) => {
+    switch (user_type) {
       case 'admin':
         return (
           <Badge variant="default" className="bg-gradient-primary">
@@ -172,7 +172,7 @@ export const UserTable: React.FC<UserTableProps> = ({
                       </div>
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
-                    <TableCell>{getRoleBadge(user.role)}</TableCell>
+                    <TableCell>{getRoleBadge(user.user_type)}</TableCell>
                     <TableCell>
                       <Badge variant="default" className="bg-green-500 hover:bg-green-500/90">
                         Actif

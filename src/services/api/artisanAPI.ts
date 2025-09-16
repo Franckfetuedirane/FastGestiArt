@@ -82,7 +82,7 @@ export const artisanAPI = {
                 adresse: '',
                 departement: '',
                 dateInscription: new Date().toISOString(),
-                photo: '',
+                photo: 'https://randomuser.me/api/portraits/lego/1.jpg',
                 dateCreation: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
               };

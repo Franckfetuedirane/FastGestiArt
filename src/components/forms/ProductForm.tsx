@@ -149,8 +149,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
       try {
         const [categoriesData, artisansData] = await Promise.all([
-          categoryAPI.getCategories(),
-          artisanAPI.getArtisans(),
+          categoryAPI.getAll(),
+          artisanAPI.getAll(),
         ]);
 
         if (!isMounted) return;

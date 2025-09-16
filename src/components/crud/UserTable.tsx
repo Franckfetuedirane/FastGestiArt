@@ -50,10 +50,8 @@ export const UserTable: React.FC<UserTableProps> = ({
   const filteredUsers = users.filter(user =>
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.user_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (user.profile && (
-      user.profile.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.profile.prenom.toLowerCase().includes(searchTerm.toLowerCase())
-    ))
+    user.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.prenom.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleDelete = (id: string, email: string) => {
@@ -148,25 +146,22 @@ export const UserTable: React.FC<UserTableProps> = ({
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
                           <AvatarImage 
-                            src={user.profile?.photo || '/api/placeholder/150/150'} 
-                            alt={user.profile?.prenom || user.email} 
+                            src={user.photo || '/api/placeholder/150/150'}
+                            alt={user.prenom || user.email}
                           />
                           <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                            {user.profile ? 
-                              `${user.profile.prenom[0]}${user.profile.nom[0]}` :
+                            {user.prenom && user.nom ?
+                              `${user.prenom[0]}${user.nom[0]}` :
                               user.email.substring(0, 2).toUpperCase()
                             }
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="font-medium">
-                            {user.profile ? 
-                              `${user.profile.prenom} ${user.profile.nom}` : 
-                              'Administrateur'
-                            }
+                            {user.prenom} {user.nom}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {user.profile?.specialite || 'Gestion système'}
+                            {user.artisanProfile?.specialite || 'Gestion système'}
                           </p>
                         </div>
                       </div>
@@ -184,13 +179,6 @@ export const UserTable: React.FC<UserTableProps> = ({
                           <span>{new Date(user.dateCreation).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                           <span className="text-xs text-muted-foreground">
                             {new Date(user.dateCreation).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                      ) : user.profile?.dateInscription ? (
-                        <div className="flex flex-col">
-                          <span>{new Date(user.profile.dateInscription).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(user.profile.dateInscription).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
                       ) : (

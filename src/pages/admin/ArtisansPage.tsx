@@ -74,14 +74,15 @@ const ArtisansPage: React.FC = () => {
     );
   }
 
-  const handleSubmit = async (data: Omit<ArtisanProfile, 'id' | 'dateInscription'>) => {
+  const handleSubmit = async (data: Omit<ArtisanProfile, 'id' | 'dateInscription' | 'dateCreation' | 'updatedAt'>) => {
     setIsSubmitting(true);
     try {
       if (editingArtisan) {
-        await artisansAPI.update(editingArtisan.id, data);
+        const updatedData = { ...editingArtisan, ...data, updatedAt: new Date().toISOString() };
+        await artisansAPI.update(editingArtisan.id, updatedData);
         setArtisans(prev => prev.map(a => 
           a.id === editingArtisan.id 
-            ? { ...a, ...data }
+            ? updatedData
             : a
         ));
         toast({
@@ -89,7 +90,14 @@ const ArtisansPage: React.FC = () => {
           description: `${data.prenom} ${data.nom} a été modifié avec succès.`,
         });
       } else {
-        const newArtisan = await artisansAPI.create(data);
+        const now = new Date().toISOString();
+        const newArtisanData = {
+          ...data,
+          dateInscription: now,
+          dateCreation: now,
+          updatedAt: now
+        };
+        const newArtisan = await artisansAPI.create(newArtisanData);
         setArtisans(prev => [...prev, newArtisan]);
         toast({
           title: "Artisan créé",

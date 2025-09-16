@@ -23,6 +23,7 @@ export interface User {
   isActive: boolean;
   isSuperAdmin?: boolean;
   artisanProfile?: ArtisanProfileDetails;
+  photo?: string;
 }
 
 export interface ArtisanProfile {

@@ -141,7 +141,7 @@ export const localStorageService = {
     const now = new Date().toISOString();
     const defaultUsers: User[] = [
       { id: 'admin-1', email: 'admin@gestiart.com', user_type: 'admin', nom: 'Admin', prenom: 'Système', telephone: '0600000000', adresse: 'Siège social', dateCreation: now, updatedAt: now, lastLogin: now, isActive: true, isSuperAdmin: true },
-      { id: 'artisan-1', email: 'artisan@gestiart.com', user_type: 'artisan', nom: 'Dupont', prenom: 'Marie', telephone: '0601020304', adresse: '123 Rue des Artisans, 75000 Paris', dateCreation: now, updatedAt: now, lastLogin: now, isActive: true, artisanProfile: { id: 'artisan-profile-1', userId: 'artisan-1', specialite: 'Céramique', description: 'Artisan céramiste spécialisé dans les pièces uniques', anneesExperience: 5, statut: 'actif' } }
+      { id: 'artisan-1', email: 'artisan@gestiart.com', user_type: 'artisan', nom: 'Dupont', prenom: 'Marie', telephone: '0601020304', adresse: '123 Rue des Artisans, 75000 Paris', dateCreation: now, updatedAt: now, lastLogin: now, isActive: true, photo: 'https://randomuser.me/api/portraits/women/44.jpg', artisanProfile: { id: 'artisan-profile-1', userId: 'artisan-1', specialite: 'Céramique', description: 'Artisan céramiste spécialisé dans les pièces uniques', anneesExperience: 5, statut: 'actif' } }
     ];
     initLocalStorage<User>(STORAGE_KEYS.USERS, defaultUsers);
   }

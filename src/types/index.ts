@@ -1,10 +1,28 @@
 // Types pour l'application GestiArt
 
+export interface ArtisanProfileDetails {
+  id: string;
+  userId: string;
+  specialite: string;
+  description: string;
+  anneesExperience: number;
+  statut: 'actif' | 'inactif' | 'en_attente';
+}
+
 export interface User {
   id: string;
   email: string;
-  role: 'admin' | 'artisan';
-  profile?: ArtisanProfile;
+  user_type: 'admin' | 'artisan' | 'secondary_admin';
+  nom: string;
+  prenom: string;
+  telephone: string;
+  adresse: string;
+  dateCreation: string;
+  updatedAt: string;
+  lastLogin: string;
+  isActive: boolean;
+  isSuperAdmin?: boolean;
+  artisanProfile?: ArtisanProfileDetails;
 }
 
 export interface ArtisanProfile {
@@ -18,6 +36,8 @@ export interface ArtisanProfile {
   departement: string;
   dateInscription: string;
   photo: string;
+  dateCreation: string;
+  updatedAt: string;
 }
 
 export interface Product {
@@ -41,17 +61,26 @@ export interface Category {
   updatedAt: string;  // Added to match the previous implementation
 }
 
-export interface Sale {
-  id: string;
+export interface SaleItem {
   productId: string;
   product?: Product;
+  quantite: number;
+  prixUnitaire: number;
+  montant: number;
+}
+
+export interface Sale {
+  id: string;
+  items: SaleItem[];
   artisanId: string;
   artisan?: ArtisanProfile;
   clientNom: string;
-  quantite: number;
   montantTotal: number;
   dateDVente: string;
   numeroFacture: string;
+  statut?: 'en_attente' | 'validee' | 'annulee';
+  modePaiement?: 'especes' | 'cheque' | 'virement' | 'carte';
+  notes?: string;
 }
 
 export interface DashboardStats {
@@ -75,23 +104,33 @@ export interface ArtisanDashboardStats {
 }
 
 export interface AuthContextType {
+  // État
   user: User | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
+  isArtisan: boolean;
+  
+  // Méthodes d'authentification
   login: (email: string, password: string, role: 'admin' | 'artisan') => Promise<boolean>;
   register: (data: RegisterData) => Promise<boolean>;
-  logout: () => void;
-  isLoading: boolean;
+  logout: () => Promise<void>;
+  
+  // Méthodes de profil utilisateur
+  updateProfile: (userId: string, updates: Partial<User>) => Promise<boolean>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
 }
 
 export interface RegisterData {
   email: string;
   password: string;
+  user_type?: 'admin' | 'artisan' | 'secondary_admin';
   nom: string;
   prenom: string;
-  specialite: string;
   telephone: string;
   adresse: string;
-  departement: string;
-  photo: File | null;
+  departement?: string;
+  photo?: File | null;
 }
 
 export type UserRole = 'admin' | 'artisan';

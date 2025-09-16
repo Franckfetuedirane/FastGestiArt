@@ -5,86 +5,133 @@ export const mockUsers: User[] = [
   {
     id: 'admin-1',
     email: 'admin@gestiart.com',
-    role: 'admin'
+    user_type: 'admin',
+    nom: 'Admin',
+    prenom: 'Système',
+    telephone: '0600000000',
+    adresse: 'Siège social',
+    dateCreation: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lastLogin: new Date().toISOString(),
+    isActive: true,
+    isSuperAdmin: true
   },
   {
     id: 'admin-2',
     email: 'admin.assistant@gestiart.com',
-    role: 'admin'
+    user_type: 'admin',
+    nom: 'Assistant',
+    prenom: 'Admin',
+    telephone: '0600000001',
+    adresse: 'Siège social',
+    dateCreation: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lastLogin: new Date().toISOString(),
+    isActive: true
   },
   {
     id: 'artisan-1',
     email: 'marie.dubois@gmail.com',
-    role: 'artisan',
-    profile: {
-      id: 'artisan-1',
-      nom: 'Dubois',
-      prenom: 'Marie',
+    user_type: 'artisan',
+    nom: 'Dubois',
+    prenom: 'Marie',
+    telephone: '221-77-123-4567',
+    adresse: '123 Rue de la Céramique, Dakar',
+    dateCreation: '2023-01-15',
+    updatedAt: new Date().toISOString(),
+    lastLogin: new Date().toISOString(),
+    isActive: true,
+    artisanProfile: {
+      id: 'artisan-profile-1',
+      userId: 'artisan-1',
       specialite: 'Poterie',
-      telephone: '221-77-123-4567',
-      email: 'marie.dubois@gmail.com',
-      adresse: '123 Rue de la Céramique, Dakar',
-      departement: 'MIFI',
-      dateInscription: '2023-01-15',
-      photo: '/api/placeholder/150/150'
+      description: 'Artisan spécialisé en poterie traditionnelle',
+      anneesExperience: 5,
+      statut: 'actif'
     }
   },
   {
     id: 'artisan-2',
     email: 'ibrahim.diallo@gmail.com',
-    role: 'artisan',
-    profile: {
-      id: 'artisan-2',
-      nom: 'Diallo',
-      prenom: 'Ibrahim',
+    user_type: 'artisan',
+    nom: 'Diallo',
+    prenom: 'Ibrahim',
+    telephone: '221-76-987-6543',
+    adresse: '456 Avenue des Artisans, MIFI',
+    dateCreation: '2023-03-20',
+    updatedAt: new Date().toISOString(),
+    lastLogin: new Date().toISOString(),
+    isActive: true,
+    artisanProfile: {
+      id: 'artisan-profile-2',
+      userId: 'artisan-2',
       specialite: 'Sculpture sur bois',
-      telephone: '221-76-987-6543',
-      email: 'ibrahim.diallo@gmail.com',
-      adresse: '456 Avenue des Artisans, MIFI',
-      departement: 'MIFI',
-      dateInscription: '2023-03-20',
-      photo: '/api/placeholder/150/150'
+      description: 'Artisan spécialisé en sculpture sur bois',
+      anneesExperience: 8,
+      statut: 'actif'
     }
   },
   {
     id: 'artisan-3',
     email: 'fatou.sene@gmail.com',
-    role: 'artisan',
-    profile: {
-      id: 'artisan-3',
-      nom: 'Sène',
-      prenom: 'Fatou',
+    user_type: 'artisan',
+    nom: 'Sène',
+    prenom: 'Fatou',
+    telephone: '221-78-555-1234',
+    adresse: '789 Boulevard de l\'Artisanat, MIFI',
+    dateCreation: '2023-02-10',
+    updatedAt: new Date().toISOString(),
+    lastLogin: new Date().toISOString(),
+    isActive: true,
+    artisanProfile: {
+      id: 'artisan-profile-3',
+      userId: 'artisan-3',
       specialite: 'Bijouterie',
-      telephone: '221-78-555-1234',
-      email: 'fatou.sene@gmail.com',
-      adresse: '789 Boulevard de l\'Artisanat, MIFI',
-      departement: 'MIFI',
-      dateInscription: '2023-02-10',
-      photo: '/api/placeholder/150/150'
+      description: 'Créatrice de bijoux artisanaux',
+      anneesExperience: 4,
+      statut: 'actif'
     }
   },
   {
     id: 'artisan-4',
     email: 'moussa.niang@gmail.com',
-    role: 'artisan',
-    profile: {
-      id: 'artisan-4',
-      nom: 'Niang',
-      prenom: 'Moussa',
+    user_type: 'artisan',
+    nom: 'Niang',
+    prenom: 'Moussa',
+    telephone: '221-70-444-5678',
+    adresse: '321 Rue du Textile, MIFI',
+    dateCreation: '2023-04-05',
+    updatedAt: new Date().toISOString(),
+    lastLogin: new Date().toISOString(),
+    isActive: true,
+    artisanProfile: {
+      id: 'artisan-profile-4',
+      userId: 'artisan-4',
       specialite: 'Textile',
-      telephone: '221-70-444-5678',
-      email: 'moussa.niang@gmail.com',
-      adresse: '321 Rue du Textile, MIFI',
-      departement: 'MIFI',
-      dateInscription: '2023-04-05',
-      photo: '/api/placeholder/150/150'
+      description: 'Artisan spécialisé en tissage traditionnel',
+      anneesExperience: 6,
+      statut: 'actif'
     }
   }
 ];
 
+// Convertir les utilisateurs avec artisanProfile en profils d'artisans
 export const mockArtisans: ArtisanProfile[] = mockUsers
-  .filter(user => user.role === 'artisan' && user.profile)
-  .map(user => user.profile!);
+  .filter(user => user.user_type === 'artisan' && user.artisanProfile)
+  .map(user => ({
+    id: user.id,
+    nom: user.nom,
+    prenom: user.prenom,
+    specialite: user.artisanProfile?.specialite || '',
+    telephone: user.telephone,
+    email: user.email,
+    adresse: user.adresse,
+    departement: 'MIFI', // Valeur par défaut
+    dateInscription: user.dateCreation,
+    photo: '/api/placeholder/150/150',
+    dateCreation: user.dateCreation,
+    updatedAt: user.updatedAt
+  }));
 
 export const mockCategories: Category[] = [
   {
@@ -198,74 +245,120 @@ mockProducts.forEach(product => {
   product.artisan = mockArtisans.find(a => a.id === product.artisanId);
 });
 
+// Mise à jour des ventes pour utiliser le tableau items
 export const mockSales: Sale[] = [
   {
     id: 'sale-1',
-    productId: 'prod-1',
+    items: [
+      {
+        productId: 'prod-1',
+        quantite: 2,
+        prixUnitaire: 15000,
+        montant: 30000
+      }
+    ],
     artisanId: 'artisan-1',
     clientNom: 'Amadou Ba',
-    quantite: 2,
     montantTotal: 30000,
     dateDVente: '2024-01-20',
-    numeroFacture: 'FACT-2024-001'
+    numeroFacture: 'FACT-2024-001',
+    statut: 'validee',
+    modePaiement: 'especes'
   },
   {
     id: 'sale-2',
-    productId: 'prod-3',
+    items: [
+      {
+        productId: 'prod-3',
+        quantite: 1,
+        prixUnitaire: 45000,
+        montant: 45000
+      }
+    ],
     artisanId: 'artisan-2',
     clientNom: 'Aïssa Ndiaye',
-    quantite: 1,
     montantTotal: 45000,
     dateDVente: '2024-01-22',
-    numeroFacture: 'FACT-2024-002'
+    numeroFacture: 'FACT-2024-002',
+    statut: 'validee',
+    modePaiement: 'virement'
   },
   {
     id: 'sale-3',
-    productId: 'prod-5',
+    items: [
+      {
+        productId: 'prod-5',
+        quantite: 3,
+        prixUnitaire: 12000,
+        montant: 36000
+      }
+    ],
     artisanId: 'artisan-3',
     clientNom: 'Oumar Sow',
-    quantite: 3,
     montantTotal: 36000,
     dateDVente: '2024-01-25',
-    numeroFacture: 'FACT-2024-003'
+    numeroFacture: 'FACT-2024-003',
+    statut: 'validee',
+    modePaiement: 'carte'
   },
   {
     id: 'sale-4',
-    productId: 'prod-2',
+    items: [
+      {
+        productId: 'prod-2',
+        quantite: 1,
+        prixUnitaire: 8000,
+        montant: 8000
+      }
+    ],
     artisanId: 'artisan-1',
     clientNom: 'Marième Fall',
-    quantite: 1,
     montantTotal: 8000,
     dateDVente: '2024-02-01',
-    numeroFacture: 'FACT-2024-004'
+    numeroFacture: 'FACT-2024-004',
+    statut: 'validee',
+    modePaiement: 'especes'
   },
   {
     id: 'sale-5',
-    productId: 'prod-4',
+    items: [
+      {
+        productId: 'prod-4',
+        quantite: 2,
+        prixUnitaire: 25000,
+        montant: 50000
+      }
+    ],
     artisanId: 'artisan-2',
-    clientNom: 'Cheikh Mbaye',
-    quantite: 2,
+    clientNom: 'Seydou Kane',
     montantTotal: 50000,
     dateDVente: '2024-02-05',
-    numeroFacture: 'FACT-2024-005'
+    numeroFacture: 'FACT-2024-005',
+    statut: 'validee',
+    modePaiement: 'cheque'
   },
   {
     id: 'sale-6',
-    productId: 'prod-6',
+    items: [
+      {
+        productId: 'prod-6',
+        quantite: 2,
+        prixUnitaire: 18000,
+        montant: 36000
+      }
+    ],
     artisanId: 'artisan-3',
-    clientNom: 'Ndeye Fatou Diop',
-    quantite: 1,
-    montantTotal: 18000,
-    dateDVente: '2024-02-08',
-    numeroFacture: 'FACT-2024-006'
+    clientNom: 'Aminata Diop',
+    montantTotal: 36000,
+    dateDVente: '2024-02-10',
+    numeroFacture: 'FACT-2024-006',
+    statut: 'validee',
+    modePaiement: 'virement'
   }
 ];
 
-// Ajouter les références produit et artisan aux ventes
-mockSales.forEach(sale => {
-  sale.product = mockProducts.find(p => p.id === sale.productId);
-  sale.artisan = mockArtisans.find(a => a.id === sale.artisanId);
-});
+// Les références aux produits sont maintenant gérées via le tableau items
+// et les artisans sont déjà référencés par artisanId
 
 // Données pour les statistiques
 export const mockDashboardStats = {

@@ -1,33 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  TrendingUp, 
-  Package, 
-  Users, 
+import {
+  TrendingUp,
+  Package,
+  Users,
   ShoppingCart,
   BarChart3,
   PieChart,
   Calendar
 } from 'lucide-react';
-import { 
-  AreaChart, 
-  Area, 
-  BarChart, 
-  Bar, 
-  PieChart as RechartsPieChart, 
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart as RechartsPieChart,
   Pie,
-  Cell, 
-  ResponsiveContainer, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend 
+  Cell,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend
 } from 'recharts';
 import { StatsCard } from './StatsCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer } from '@/components/ui/chart';
 import { DashboardStats } from '@/types';
 import { statsAPI } from '@/services/apiService';
+import { APIConnectionStatus } from '@/components/APIConnectionStatus';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
 
@@ -75,6 +76,11 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* API Connection Status */}
+      <div className="flex justify-end">
+        <APIConnectionStatus />
+      </div>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
@@ -84,7 +90,7 @@ export const AdminDashboard: React.FC = () => {
           trend={{ value: 15.2, label: "ce mois" }}
           iconClassName="bg-gradient-primary"
         />
-        
+
         <StatsCard
           title="Ventes Totales"
           value={stats.ventesTotales}
@@ -92,14 +98,14 @@ export const AdminDashboard: React.FC = () => {
           trend={{ value: 8.1, label: "ce mois" }}
           iconClassName="bg-gradient-secondary"
         />
-        
+
         <StatsCard
           title="Artisans Actifs"
           value={stats.nombreArtisans}
           icon={Users}
           iconClassName="bg-gradient-accent"
         />
-        
+
         <StatsCard
           title="Produits Disponibles"
           value={stats.nombreProduits}
@@ -124,20 +130,20 @@ export const AdminDashboard: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stats.ventesParMois}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="mois" 
+                  <XAxis
+                    dataKey="mois"
                     stroke="hsl(var(--muted-foreground))"
                     fontSize={12}
                   />
-                  <YAxis 
+                  <YAxis
                     stroke="hsl(var(--muted-foreground))"
                     fontSize={12}
                     tickFormatter={(value) => `${value / 1000}k`}
                   />
-                  <Tooltip 
+                  <Tooltip
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--background))', 
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px'
                     }}
@@ -169,10 +175,10 @@ export const AdminDashboard: React.FC = () => {
             <ChartContainer config={chartConfig} className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsPieChart>
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value: number) => [`${value.toLocaleString()} FCFA`, 'Montant']}
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--background))', 
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px'
                     }}
@@ -214,29 +220,29 @@ export const AdminDashboard: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.ventesParArtisan} layout="horizontal">
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    type="number" 
+                  <XAxis
+                    type="number"
                     stroke="hsl(var(--muted-foreground))"
                     fontSize={12}
                     tickFormatter={(value) => `${value / 1000}k`}
                   />
-                  <YAxis 
-                    type="category" 
-                    dataKey="artisan" 
+                  <YAxis
+                    type="category"
+                    dataKey="artisan"
                     stroke="hsl(var(--muted-foreground))"
                     fontSize={12}
                     width={100}
                   />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value: number) => [`${value.toLocaleString()} FCFA`, 'Ventes']}
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--background))', 
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px'
                     }}
                   />
-                  <Bar 
-                    dataKey="montant" 
+                  <Bar
+                    dataKey="montant"
                     fill="hsl(var(--accent))"
                     radius={[0, 4, 4, 0]}
                   />
@@ -268,10 +274,10 @@ export const AdminDashboard: React.FC = () => {
                     </p>
                   </div>
                   <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-gradient-primary transition-all duration-500"
-                      style={{ 
-                        width: `${(product.ventes / Math.max(...stats.topProduits.map(p => p.ventes))) * 100}%` 
+                      style={{
+                        width: `${(product.ventes / Math.max(...stats.topProduits.map(p => p.ventes))) * 100}%`
                       }}
                     />
                   </div>

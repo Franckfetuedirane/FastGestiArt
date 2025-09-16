@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { toast } from '@/components/ui/use-toast';
+import { localStorageService } from '@/services/localStorageService';
 import {
   Dialog,
   DialogContent,
@@ -27,17 +29,44 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Product, ArtisanProfile, Category } from '@/types';
-import { artisansAPI, categoriesAPI } from '@/services/apiService';
+import { artisanAPI, categoryAPI } from '@/services/api';
 import { ImageUpload } from '@/components/ui/image-upload';
 
 const productSchema = z.object({
-  nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
-  description: z.string().min(10, 'La description doit contenir au moins 10 caractères'),
-  categorie: z.string().min(1, 'Veuillez sélectionner une catégorie'),
-  prix: z.number().min(1, 'Le prix doit être supérieur à 0'),
-  stock: z.number().min(0, 'Le stock ne peut pas être négatif'),
-  artisanId: z.string().min(1, 'Veuillez sélectionner un artisan'),
-  image: z.string().url('URL d\'image invalide').optional().or(z.literal('')),
+  nom: z.string()
+    .min(2, 'Le nom doit contenir au moins 2 caractères')
+    .max(100, 'Le nom ne peut pas dépasser 100 caractères'),
+    
+  description: z.string()
+    .min(10, 'La description doit contenir au moins 10 caractères')
+    .max(2000, 'La description ne peut pas dépasser 2000 caractères'),
+    
+  categorie: z.string()
+    .min(1, 'Veuillez sélectionner une catégorie')
+    .max(100, 'La catégorie ne peut pas dépasser 100 caractères'),
+    
+  prix: z.number()
+    .min(0.01, 'Le prix doit être supérieur à 0')
+    .max(1000000, 'Le prix ne peut pas dépasser 1 000 000'),
+    
+  stock: z.number()
+    .int('Le stock doit être un nombre entier')
+    .min(0, 'Le stock ne peut pas être négatif')
+    .max(1000000, 'Le stock ne peut pas dépasser 1 000 000'),
+    
+  artisanId: z.string()
+    .min(1, 'Veuillez sélectionner un artisan'),
+    
+  image: z.union([
+    z.string().url('URL d\'image invalide'),
+    z.instanceof(File, { message: 'Veuillez sélectionner un fichier valide' })
+      .refine(file => file.size < 5000000, 'L\'image doit faire moins de 5MB')
+      .refine(
+        file => ['image/jpeg', 'image/png', 'image/webp'].includes(file.type),
+        'Seuls les formats JPEG, PNG et WebP sont acceptés'
+      ),
+    z.literal('')
+  ]).optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -59,15 +88,18 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 }) => {
   const [artisans, setArtisans] = useState<ArtisanProfile[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [formData, setFormData] = useState({
-    nom: '',
-    description: '',
-    categorie: '',
-    prix: 0,
-    stock: 0,
-    artisanId: '',
-    image: '/api/placeholder/300/300'
-  });
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Fonction pour convertir un fichier en base64
+  const toBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -81,66 +113,213 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       image: product?.image || '',
     },
   });
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [artisansData, categoriesData] = await Promise.all([
-          artisansAPI.getAll(),
-          categoriesAPI.getAll()
-        ]);
-        setArtisans(artisansData);
-        setCategories(categoriesData);
-      } catch (error) {
-        console.error('Erreur lors du chargement des données:', error);
-      }
-    };
-
-    if (isOpen) {
-      loadData();
-    }
-  }, [isOpen]);
-
+  
+  // Réinitialiser le formulaire lorsque le produit change
   useEffect(() => {
     if (product) {
-      setFormData({
+      form.reset({
         nom: product.nom,
         description: product.description,
         categorie: product.categorie,
         prix: product.prix,
         stock: product.stock,
         artisanId: product.artisanId,
-        image: product.image
+        image: product.image || '',
       });
     } else {
-      setFormData({
+      form.reset({
         nom: '',
         description: '',
         categorie: '',
         prix: 0,
         stock: 0,
         artisanId: '',
-        image: '/api/placeholder/300/300'
+        image: '',
       });
     }
-  }, [product]);
+  }, [product, form]);
 
-  const handleImageUpload = (imageUrl: string) => {
-    setFormData(prev => ({ ...prev, image: imageUrl }));
+  // Charger les données nécessaires
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadData = async () => {
+      if (!isOpen) return;
+      
+      console.log('Chargement des données du formulaire...');
+      setIsLoadingData(true);
+      
+      try {
+        // Charger d'abord les catégories depuis le localStorage
+        const categoriesData = localStorageService.getCategories();
+        console.log('Catégories chargées depuis le localStorage:', categoriesData);
+        
+        // Charger les artisans depuis le localStorage
+        const artisansData = localStorageService.getArtisans();
+        console.log('Artisans chargés depuis le localStorage:', artisansData);
+        
+        // Mapper les données des artisans pour correspondre à l'interface ArtisanProfile
+        const mappedArtisans = artisansData.map(artisan => ({
+          id: artisan.id,
+          nom: artisan.nom || '',
+          prenom: artisan.prenom || '',
+          specialite: artisan.specialite || 'Non spécifié',
+          telephone: artisan.telephone || '',
+          email: artisan.email || '',
+          adresse: artisan.adresse || '',
+          departement: artisan.departement || 'Non spécifié',
+          dateInscription: artisan.dateInscription || new Date().toISOString(),
+          photo: artisan.photo || '',
+          dateCreation: artisan.dateCreation || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }));
+        
+        if (!isMounted) return;
+        
+        // Mettre à jour l'état avec les données chargées
+        setArtisans(mappedArtisans);
+        setCategories(categoriesData);
+        
+        // Mettre à jour les valeurs du formulaire
+        const formValues: Partial<ProductFormData> = {};
+        
+        // Définir l'artisan par défaut s'il n'est pas déjà défini
+        if (mappedArtisans.length > 0) {
+          const defaultArtisanId = product?.artisanId || (mappedArtisans[0]?.id || '');
+          formValues.artisanId = defaultArtisanId;
+          console.log('Artisan par défaut défini:', defaultArtisanId);
+        }
+        
+        // Définir la catégorie si disponible
+        if (product?.categorie) {
+          formValues.categorie = product.categorie;
+        } else if (categoriesData.length > 0) {
+          formValues.categorie = categoriesData[0].name;
+        }
+        
+        // Mettre à jour le formulaire avec les valeurs par défaut
+        form.reset({
+          ...form.getValues(),
+          ...formValues
+        });
+        
+        // Forcer la validation des champs mis à jour
+        if (formValues.artisanId) form.trigger('artisanId');
+        if (formValues.categorie) form.trigger('categorie');
+        
+      } catch (error) {
+        console.error('Erreur lors du chargement des données:', error);
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de charger les données nécessaires pour le formulaire.',
+          variant: 'destructive'
+        });
+      } finally {
+        if (isMounted) {
+          console.log('Fin du chargement des données du formulaire');
+          setIsLoadingData(false);
+        }
+      }
+    };
+    
+    // Charger les données lorsque le formulaire est ouvert
+    if (isOpen) {
+      loadData();
+    }
+    
+    // Nettoyage lors du démontage du composant
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, product, form]);
+
+  const handleImageUpload = async (file: File) => {
+    try {
+      const base64Image = await toBase64(file);
+      form.setValue('image', base64Image, { shouldValidate: true });
+    } catch (error) {
+      console.error('Erreur lors du téléchargement de l\'image:', error);
+    }
+  };
+  
+  const handleRemoveImage = () => {
+    form.setValue('image', '', { shouldValidate: true });
   };
 
-  const handleSubmit = async (data: ProductFormData) => {
-    await onSubmit({
-      nom: data.nom,
-      description: data.description,
-      categorie: data.categorie,
-      prix: data.prix,
-      stock: data.stock,
-      artisanId: data.artisanId,
-      image: data.image || '/api/placeholder/300/200',
-    });
-    form.reset();
-    onClose();
+  const handleSubmit = async (formData: ProductFormData) => {
+    let loadingToast: { dismiss: () => void } | null = null;
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Afficher un toast de chargement
+      loadingToast = toast({
+        title: 'Traitement en cours',
+        description: 'Enregistrement du produit...',
+        duration: 0, // Ne pas fermer automatiquement
+      });
+      
+      // Gérer l'upload de l'image si c'est un fichier
+      let imageUrl = '';
+      if (formData.image instanceof File) {
+        try {
+          // Simuler un upload
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Simulation de délai
+          imageUrl = URL.createObjectURL(formData.image);
+        } catch (error) {
+          console.error('Erreur lors de l\'upload de l\'image:', error);
+          throw new Error('Échec de l\'upload de l\'image. Veuillez réessayer.');
+        }
+      } else if (typeof formData.image === 'string') {
+        imageUrl = formData.image;
+      }
+      
+      // Préparer les données du produit avec des valeurs par défaut pour les champs requis
+      const productData = {
+        nom: formData.nom || 'Sans nom',
+        description: formData.description || '',
+        categorie: formData.categorie || 'Autre',
+        prix: formData.prix || 0,
+        stock: formData.stock || 0,
+        artisanId: formData.artisanId || '',
+        image: imageUrl,
+        dateCreation: product?.dateCreation || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      // Appeler la fonction de soumission fournie par le parent
+      await onSubmit(productData);
+      
+      // Fermer le formulaire
+      onClose();
+      
+      // Afficher un message de succès
+      toast({
+        title: 'Succès',
+        description: product ? 'Le produit a été mis à jour avec succès.' : 'Le produit a été créé avec succès.',
+        duration: 5000,
+      });
+      
+    } catch (error) {
+      console.error('Erreur lors de la soumission du formulaire:', error);
+      
+      // Afficher un message d'erreur approprié
+      toast({
+        title: 'Erreur',
+        description: error instanceof Error ? error.message : 'Une erreur est survenue lors de la sauvegarde du produit.',
+        variant: 'destructive',
+        duration: 5000,
+      });
+      
+      // Relancer l'erreur pour que le composant parent puisse la gérer si nécessaire
+      throw error;
+    } finally {
+      // Fermer le toast de chargement
+      if (loadingToast) {
+        loadingToast.dismiss();
+      }
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -180,7 +359,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       placeholder="Description détaillée du produit"
                       className="resize-none"
                       rows={3}
@@ -207,8 +386,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                       </FormControl>
                       <SelectContent>
                         {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.nom}>
-                            {category.nom}
+                          <SelectItem key={category.id} value={category.name}>
+                            {category.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -252,8 +431,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   <FormItem>
                     <FormLabel>Prix (FCFA)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
+                      <Input
+                        type="number"
                         placeholder="0"
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value))}
@@ -271,8 +450,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   <FormItem>
                     <FormLabel>Stock initial</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
+                      <Input
+                        type="number"
                         placeholder="0"
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value))}
@@ -289,9 +468,18 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               name="image"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>URL de l'image (optionnel)</FormLabel>
+                  <FormLabel>Image du produit</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://..." {...field} />
+                    <div className="space-y-4">
+                      <ImageUpload
+                        currentImage={field.value as string}
+                        onUpload={handleImageUpload}
+                        onRemove={handleRemoveImage}
+                      />
+                      <div className="text-sm text-muted-foreground">
+                        Téléchargez une image ou entrez une URL (max 5MB, JPG/PNG/WebP)
+                      </div>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

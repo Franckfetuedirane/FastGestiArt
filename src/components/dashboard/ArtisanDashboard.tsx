@@ -30,28 +30,67 @@ import { statsAPI } from '@/services/apiService';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const ArtisanDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [stats, setStats] = useState<ArtisanDashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('🔍 ArtisanDashboard: useEffect - user:', user);
+    console.log('🔍 ArtisanDashboard: isAuthenticated:', isAuthenticated);
+    
     const loadStats = async () => {
-      if (!user?.profile?.id) return;
+      console.log('🔄 ArtisanDashboard: Début du chargement des statistiques...');
+      setIsLoading(true);
+      setError(null);
       
       try {
-        const data = await statsAPI.getArtisanStats(user.profile.id);
+        if (!user) {
+          throw new Error('Aucun utilisateur connecté');
+        }
+        
+        console.log('📋 ArtisanDashboard: Structure de l\'utilisateur:', {
+          id: user.id,
+          email: user.email,
+          user_type: user.user_type,
+          hasArtisanProfile: !!user.artisanProfile,
+          artisanProfile: user.artisanProfile
+        });
+        
+        // Utiliser l'ID de l'utilisateur comme ID de profil
+        const profileId = user.id;
+        console.log('🆔 ArtisanDashboard: ID de profil à utiliser:', profileId);
+        
+        console.log('📡 ArtisanDashboard: Appel à statsAPI.getArtisanStats avec ID:', profileId);
+        const data = await statsAPI.getArtisanStats(profileId);
+        console.log('📊 ArtisanDashboard: Données reçues de statsAPI:', data);
+        
+        if (!data) {
+          throw new Error('Aucune donnée reçue du serveur');
+        }
+        
         setStats(data);
-      } catch (error) {
-        console.error('Erreur lors du chargement des statistiques:', error);
+        console.log('✅ ArtisanDashboard: Statistiques mises à jour dans le state');
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Une erreur inconnue est survenue';
+        console.error('❌ ArtisanDashboard: Erreur:', errorMessage, err);
+        setError(errorMessage);
       } finally {
+        console.log('🏁 ArtisanDashboard: Fin du chargement des statistiques');
         setIsLoading(false);
       }
     };
 
-    loadStats();
-  }, [user]);
+    if (isAuthenticated) {
+      loadStats();
+    } else {
+      setIsLoading(false);
+      setError('Veuillez vous connecter pour accéder à cette page');
+    }
+  }, [user, isAuthenticated]);
 
-  if (isLoading || !stats || !user?.profile) {
+  // État de chargement
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -63,6 +102,26 @@ export const ArtisanDashboard: React.FC = () => {
             </Card>
           ))}
         </div>
+      </div>
+    );
+  }
+  
+  // Gestion des erreurs
+  if (error) {
+    return (
+      <div className="p-6 bg-red-50 text-red-700 rounded-lg">
+        <h2 className="text-lg font-semibold mb-2">Erreur</h2>
+        <p>{error}</p>
+      </div>
+    );
+  }
+  
+  // Vérification de l'utilisateur et des statistiques
+  if (!user) {
+    return (
+      <div className="p-6 bg-yellow-50 text-yellow-700 rounded-lg">
+        <h2 className="text-lg font-semibold mb-2">Accès non autorisé</h2>
+        <p>Veuillez vous connecter pour accéder à cette page.</p>
       </div>
     );
   }
@@ -86,33 +145,35 @@ export const ArtisanDashboard: React.FC = () => {
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex items-center gap-4">
               <Avatar className="h-20 w-20">
-                <AvatarImage src={user.profile.photo} alt={user.profile.prenom} />
+                <AvatarImage src="/placeholder-avatar.png" alt={`${user.prenom} ${user.nom}`} />
                 <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xl">
-                  {user.profile.prenom[0]}{user.profile.nom[0]}
+                  {user.prenom?.[0] || ''}{user.nom?.[0] || ''}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <h2 className="text-2xl font-semibold text-foreground">
-                  {user.profile.prenom} {user.profile.nom}
+                  {user.prenom} {user.nom}
                 </h2>
-                <Badge variant="secondary" className="mt-1">
-                  {user.profile.specialite}
-                </Badge>
+                {user.artisanProfile?.specialite && (
+                  <Badge variant="secondary" className="mt-1">
+                    {user.artisanProfile.specialite}
+                  </Badge>
+                )}
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:ml-auto">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Mail className="h-4 w-4" />
-                <span className="text-sm">{user.profile.email}</span>
+                <span className="text-sm">{user.email}</span>
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Phone className="h-4 w-4" />
-                <span className="text-sm">{user.profile.telephone}</span>
+                <span className="text-sm">{user.telephone}</span>
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <MapPin className="h-4 w-4" />
-                <span className="text-sm">{user.profile.departement}</span>
+                <span className="text-sm">{user.adresse}</span>
               </div>
             </div>
           </div>

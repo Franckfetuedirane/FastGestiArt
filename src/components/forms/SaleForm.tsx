@@ -22,7 +22,11 @@ interface SaleFormProps {
   isLoading?: boolean;
 }
 
-interface SaleItem {
+// Utiliser l'interface SaleItem du type global
+import { SaleItem as GlobalSaleItem } from '@/types';
+
+// Interface locale pour la gestion du formulaire
+interface SaleItemForm {
   productId: string;
   quantity: number;
   unitPrice: number;
@@ -39,16 +43,17 @@ export const SaleForm: React.FC<SaleFormProps> = ({
 }) => {
   const [clientName, setClientName] = useState('');
   const [artisanId, setArtisanId] = useState('');
-  const [saleItems, setSaleItems] = useState<SaleItem[]>([{
+  const [saleItems, setSaleItems] = useState<SaleItemForm[]>([{
     productId: '',
     quantity: 1,
     unitPrice: 0,
     totalPrice: 0
   }]);
 
-  // Filtrer les produits par artisan
-  const filteredProducts = products.filter(product => 
-    product.artisanId === artisanId
+  // Mémoriser les produits filtrés par artisan
+  const filteredProducts = React.useMemo(() => 
+    products.filter(product => product.artisanId === artisanId),
+    [products, artisanId]
   );
 
   // Réinitialiser les produits sélectionnés quand l'artisan change
@@ -63,29 +68,59 @@ export const SaleForm: React.FC<SaleFormProps> = ({
     }]);
   };
 
-  const calculateTotal = (items: SaleItem[]) => {
-    return items.reduce((sum, item) => sum + item.totalPrice, 0);
-  };
+  // Calculer le total de la vente
+  const calculateTotal = React.useCallback((items: SaleItemForm[]) => {
+    return items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+  }, []);
 
+  // Mettre à jour le total quand les articles changent
+  const totalAmount = React.useMemo(() => 
+    calculateTotal(saleItems),
+    [saleItems, calculateTotal]
+  );
+
+  // Gérer le changement de produit
   const handleProductChange = (index: number, productId: string) => {
     const product = products.find(p => p.id === productId);
+    if (!product) return;
+    
     const newItems = [...saleItems];
+    const quantity = newItems[index].quantity || 1;
+    const unitPrice = product.prix || 0;
+    
     newItems[index] = {
       ...newItems[index],
       productId,
-      unitPrice: product?.prix || 0,
-      totalPrice: (product?.prix || 0) * newItems[index].quantity
+      unitPrice,
+      totalPrice: unitPrice * quantity
     };
+    
     setSaleItems(newItems);
   };
 
+  // Gérer le changement de quantité
   const handleQuantityChange = (index: number, quantity: number) => {
+    if (quantity < 1) return;
+    
     const newItems = [...saleItems];
+    const productId = newItems[index].productId;
+    const product = products.find(p => p.id === productId);
+    const unitPrice = product?.prix || newItems[index].unitPrice || 0;
+    
+    // Vérifier le stock disponible
+    const availableStock = product?.stock || 0;
+    if (quantity > availableStock) {
+      // Afficher une alerte ou limiter la quantité au stock disponible
+      quantity = availableStock;
+    }
+    
     newItems[index] = {
       ...newItems[index],
       quantity,
-      totalPrice: newItems[index].unitPrice * quantity
+      unitPrice,
+      totalPrice: unitPrice * quantity
     };
+    
     setSaleItems(newItems);
   };
 
@@ -111,6 +146,20 @@ export const SaleForm: React.FC<SaleFormProps> = ({
     const artisan = artisans.find(a => a.id === artisanId);
     if (!artisan) return;
 
+    // Convertir les articles du formulaire en format SaleItem
+    const items: GlobalSaleItem[] = saleItems
+      .filter(item => item.productId && item.quantity > 0)
+      .map(item => {
+        const product = products.find(p => p.id === item.productId);
+        return {
+          productId: item.productId,
+          product: product,
+          quantite: item.quantity,
+          prixUnitaire: item.unitPrice,
+          montant: item.totalPrice
+        };
+      });
+
     const saleData: Omit<Sale, 'id'> = {
       clientNom: clientName,
       artisanId: artisanId,
@@ -118,17 +167,17 @@ export const SaleForm: React.FC<SaleFormProps> = ({
       dateDVente: new Date().toISOString(),
       numeroFacture: `FACT-${format(new Date(), 'yyyyMMdd-HHmmss')}`,
       montantTotal: calculateTotal(saleItems),
-      items: saleItems.map(item => ({
-        productId: item.productId,
-        product: products.find(p => p.id === item.productId)!,
-        quantite: item.quantity,
-        prixUnitaire: item.unitPrice,
-        sousTotal: item.totalPrice
-      }))
+      items: items,
+      statut: 'validee', // Par défaut, la vente est validée
+      modePaiement: 'especes' // Par défaut, paiement en espèces
     };
 
-    await onSubmit(saleData);
-    resetForm();
+    try {
+      await onSubmit(saleData);
+      resetForm();
+    } catch (error) {
+      console.error('Erreur lors de la création de la vente:', error);
+    }
   };
 
   const resetForm = () => {

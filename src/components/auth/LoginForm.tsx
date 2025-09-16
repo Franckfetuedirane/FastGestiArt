@@ -52,9 +52,6 @@ export const LoginForm: React.FC = () => {
     <div className="min-h-screen bg-gradient-warm flex items-center justify-center p-4">
       <Card className="w-full max-w-md card-elegant">
         <CardHeader className="text-center">
-          <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center mb-4">
-            <LogIn className="h-8 w-8 text-primary-foreground" />
-          </div>
           <CardTitle className="text-2xl text-gradient-primary">GestiArt</CardTitle>
           <CardDescription>
             Connectez-vous à votre espace de gestion artisanale
@@ -67,7 +64,7 @@ export const LoginForm: React.FC = () => {
               <Select value={role} onValueChange={(value: UserRole) => setRole(value)}>
                 <SelectTrigger>
                   <User className="h-4 w-4 mr-2" />
-                  <SelectValue />
+                  <SelectValue placeholder="Sélectionnez un rôle" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Administrateur</SelectItem>
@@ -130,15 +127,7 @@ export const LoginForm: React.FC = () => {
             </Button>
           </div>
           
-          <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-            <p className="text-xs text-muted-foreground text-center mb-2">
-              <strong>Comptes de test:</strong>
-            </p>
-            <div className="text-xs space-y-1">
-              <p><strong>Admin:</strong> admin@gestiart.com / password123</p>
-              <p><strong>Artisan:</strong> marie.dubois@gmail.com / password123</p>
-            </div>
-          </div>
+
         </CardContent>
       </Card>
     </div>

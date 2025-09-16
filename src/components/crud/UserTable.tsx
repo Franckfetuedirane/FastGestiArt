@@ -73,20 +73,30 @@ export const UserTable: React.FC<UserTableProps> = ({
   };
 
   const getRoleBadge = (role: string) => {
-    if (role === 'admin') {
-      return (
-        <Badge variant="default" className="bg-gradient-primary">
-          <Shield className="h-3 w-3 mr-1" />
-          Admin
-        </Badge>
-      );
+    switch (role) {
+      case 'admin':
+        return (
+          <Badge variant="default" className="bg-gradient-primary">
+            <Shield className="h-3 w-3 mr-1" />
+            Administrateur
+          </Badge>
+        );
+      case 'secondary_admin':
+        return (
+          <Badge variant="default" className="bg-blue-500">
+            <Shield className="h-3 w-3 mr-1" />
+            Admin Secondaire
+          </Badge>
+        );
+      case 'artisan':
+      default:
+        return (
+          <Badge variant="secondary">
+            <UserIcon className="h-3 w-3 mr-1" />
+            Artisan
+          </Badge>
+        );
     }
-    return (
-      <Badge variant="secondary">
-        <UserIcon className="h-3 w-3 mr-1" />
-        Artisan
-      </Badge>
-    );
   };
 
   return (
@@ -169,10 +179,23 @@ export const UserTable: React.FC<UserTableProps> = ({
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {user.profile?.dateInscription ? 
-                        new Date(user.profile.dateInscription).toLocaleDateString('fr-FR') :
-                        'N/A'
-                      }
+                      {user.dateCreation ? (
+                        <div className="flex flex-col">
+                          <span>{new Date(user.dateCreation).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(user.dateCreation).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      ) : user.profile?.dateInscription ? (
+                        <div className="flex flex-col">
+                          <span>{new Date(user.profile.dateInscription).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(user.profile.dateInscription).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">Non spécifiée</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

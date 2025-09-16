@@ -1,3 +1,4 @@
+// src/components/layout/AppSidebar.tsx
 import React from 'react';
 import { useLocation, NavLink } from 'react-router-dom';
 import {
@@ -10,7 +11,8 @@ import {
   UserCircle,
   LogOut,
   Palette,
-  Shield
+  Shield,
+  Settings
 } from 'lucide-react';
 import {
   Sidebar,
@@ -31,7 +33,7 @@ import { useAuth } from '@/contexts/AuthContext';
 // Navigation items for Admin
 const adminNavItems = [
   {
-    title: 'Dashboard',
+    title: 'Tableau de bord',
     url: '/admin/dashboard',
     icon: LayoutDashboard,
   },
@@ -57,7 +59,7 @@ const adminNavItems = [
   },
   {
     title: 'Utilisateurs',
-    url: '/admin/users',
+    url: '/admin/utilisateurs',
     icon: Shield,
   },
   {
@@ -65,12 +67,17 @@ const adminNavItems = [
     url: '/admin/rapports',
     icon: FileBarChart,
   },
+  {
+    title: 'Paramètres',
+    url: '/admin/parametres',
+    icon: Settings,
+  },
 ];
 
 // Navigation items for Artisan
 const artisanNavItems = [
   {
-    title: 'Dashboard',
+    title: 'Tableau de bord',
     url: '/artisan/dashboard',
     icon: LayoutDashboard,
   },
@@ -97,14 +104,18 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
 
-  const isActive = (path: string) => currentPath === path;
+  const isActive = (path: string) => currentPath.startsWith(path);
   const collapsed = state === 'collapsed';
 
   // Determine navigation items based on user role
-  const navItems = user?.role === 'admin' ? adminNavItems : artisanNavItems;
+  const navItems = user?.user_type === 'admin' ? adminNavItems : artisanNavItems;
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+    }
   };
 
   return (
@@ -120,7 +131,7 @@ export function AppSidebar() {
               <div>
                 <h2 className="font-semibold text-sidebar-primary">GestiArt</h2>
                 <p className="text-xs text-sidebar-foreground/70 capitalize">
-                  {user?.role === 'admin' ? 'Administrateur' : 'Artisan'}
+                  {user?.user_type === 'admin' ? 'Administrateur' : 'Artisan'}
                 </p>
               </div>
             )}
@@ -152,25 +163,25 @@ export function AppSidebar() {
       {/* Footer with user info */}
       <SidebarFooter className="border-t border-sidebar-border">
         <div className="p-3">
-          {!collapsed && user?.profile && (
+          {!collapsed && user && (
             <div className="flex items-center gap-3 mb-3">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user.profile.photo} alt={user.profile.prenom} />
+                <AvatarImage src={user.photo} alt={`${user.prenom} ${user.nom}`} />
                 <AvatarFallback className="bg-gradient-accent text-accent-foreground text-xs">
-                  {user.profile.prenom[0]}{user.profile.nom[0]}
+                  {user.prenom?.[0]}{user.nom?.[0]}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-sidebar-primary truncate">
-                  {user.profile.prenom} {user.profile.nom}
+                  {user.prenom} {user.nom}
                 </p>
                 <p className="text-xs text-sidebar-foreground/70 truncate">
-                  {user.profile.specialite || user.email}
+                  {user.email}
                 </p>
               </div>
             </div>
           )}
-          
+
           <Button
             onClick={handleLogout}
             variant="ghost"

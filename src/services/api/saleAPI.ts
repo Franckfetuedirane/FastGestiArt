@@ -1,11 +1,12 @@
 import { API_CONFIG } from '@/config/api.config';
 import { Sale } from '@/types';
-import { mockSales } from '@/data/mockData';
+import { localStorageService } from '../localStorageService';
 
 export const saleAPI = {
   getAll: async (email?: string, password?: string): Promise<Sale[]> => {
     if (API_CONFIG.USE_MOCK) {
-      return new Promise(resolve => setTimeout(() => resolve(mockSales), 500));
+      const sales = localStorageService.getSales();
+      return new Promise(resolve => setTimeout(() => resolve(sales), 500));
     }
 
     const response = await fetch(`${API_CONFIG.API_URL}/ventes/`, {
@@ -27,7 +28,9 @@ export const saleAPI = {
         ...data,
         dateDVente: new Date().toISOString()
       };
-      mockSales.push(newSale);
+      const sales = localStorageService.getSales();
+      sales.push(newSale);
+      localStorageService.saveSales(sales);
       return new Promise(resolve => setTimeout(() => resolve(newSale), 500));
     }
 
@@ -48,8 +51,9 @@ export const saleAPI = {
 
   delete: async (id: string, email?: string, password?: string): Promise<void> => {
     if (API_CONFIG.USE_MOCK) {
-      const index = mockSales.findIndex(s => s.id === id);
-      if (index !== -1) mockSales.splice(index, 1);
+      const sales = localStorageService.getSales();
+      const updatedSales = sales.filter(s => s.id !== id);
+      localStorageService.saveSales(updatedSales);
       return new Promise(resolve => setTimeout(resolve, 500));
     }
 

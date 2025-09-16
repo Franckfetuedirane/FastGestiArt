@@ -29,22 +29,43 @@ const SalesPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Chargement en parallèle des ventes, produits et artisans
-      const [salesData, productsData, artisansData] = await Promise.all([
+      // Chargement en parallèle des ventes, produits et artisans avec gestion des erreurs individuelles
+      const [salesResult, productsResult, artisansResult] = await Promise.allSettled([
         saleService.getAll(),
         productService.getAll(),
         artisansAPI.getAll()
       ]);
       
+      // Gestion des résultats
+      const salesData = salesResult.status === 'fulfilled' ? salesResult.value : [];
+      const productsData = productsResult.status === 'fulfilled' ? productsResult.value : [];
+      const artisansData = artisansResult.status === 'fulfilled' ? artisansResult.value : [];
+      
+      if (salesResult.status === 'rejected') {
+        console.error('Erreur lors du chargement des ventes:', salesResult.reason);
+      }
+      if (productsResult.status === 'rejected') {
+        console.error('Erreur lors du chargement des produits:', productsResult.reason);
+      }
+      if (artisansResult.status === 'rejected') {
+        console.error('Erreur lors du chargement des artisans:', artisansResult.reason);
+      }
+      
       console.log(`${salesData.length} ventes chargées`);
       console.log(`${productsData.length} produits chargés`);
       console.log(`${artisansData.length} artisans chargés`);
       
-      // S'assurer que chaque vente a bien un tableau d'items
+      // S'assurer que chaque vente a bien un tableau d'items et des valeurs par défaut
       const validatedSales = salesData.map(sale => ({
         ...sale,
-        items: sale.items || []
-      }));
+        items: Array.isArray(sale.items) ? sale.items : [],
+        clientNom: sale.clientNom || 'Client inconnu',
+        montantTotal: sale.montantTotal || 0,
+        statut: (sale.statut as 'en_attente' | 'validee' | 'annulee') || 'validee',
+        dateDVente: sale.dateDVente || new Date().toISOString(),
+        modePaiement: sale.modePaiement || 'especes' as const,
+        artisanId: sale.artisanId || ''
+      } as Sale));
       
       setSales(validatedSales);
       setProducts(productsData);
@@ -52,14 +73,14 @@ const SalesPage: React.FC = () => {
       
       // Vérifier les données chargées
       if (validatedSales.length === 0) {
-        console.warn('Aucune vente trouvée dans le stockage local');
+        console.warn('Aucune vente trouvée');
       }
       
     } catch (error) {
-      console.error('Erreur lors du chargement des ventes:', error);
+      console.error('Erreur inattendue lors du chargement des données:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de charger les données des ventes. Veuillez réessayer.",
+        description: "Une erreur inattendue s'est produite lors du chargement des données.",
         variant: "destructive"
       });
     } finally {

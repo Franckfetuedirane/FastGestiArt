@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { toast } from '@/components/ui/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,17 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ArtisanProfile } from '@/types';
+import { ImageUpload } from '@/components/ui/image-upload';
+
+// Fonction utilitaire pour convertir un fichier en base64
+const toBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
 
 const artisanSchema = z.object({
   nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
@@ -29,7 +41,16 @@ const artisanSchema = z.object({
   email: z.string().email('Adresse email invalide'),
   adresse: z.string().min(5, 'L\'adresse doit contenir au moins 5 caractères'),
   departement: z.string().min(2, 'Le département doit contenir au moins 2 caractères'),
-  photo: z.string().url('URL de photo invalide').optional().or(z.literal('')),
+  photo: z.union([
+    z.string().url('URL de photo invalide'),
+    z.instanceof(File, { message: 'Veuillez sélectionner un fichier valide' })
+      .refine(file => file.size < 5000000, 'L\'image doit faire moins de 5MB')
+      .refine(
+        file => ['image/jpeg', 'image/png', 'image/webp'].includes(file.type),
+        'Seuls les formats JPEG, PNG et WebP sont acceptés'
+      ),
+    z.literal('')
+  ]).optional(),
 });
 
 type ArtisanFormData = z.infer<typeof artisanSchema>;
@@ -49,6 +70,8 @@ export const ArtisanForm: React.FC<ArtisanFormProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const form = useForm<ArtisanFormData>({
     resolver: zodResolver(artisanSchema),
     defaultValues: {
@@ -62,20 +85,76 @@ export const ArtisanForm: React.FC<ArtisanFormProps> = ({
       photo: artisan?.photo || '',
     },
   });
+  
+  const handleImageUpload = async (file: File) => {
+    try {
+      const base64Image = await toBase64(file);
+      form.setValue('photo', base64Image, { shouldValidate: true });
+    } catch (error) {
+      console.error('Erreur lors du téléchargement de l\'image:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Une erreur est survenue lors du téléchargement de l\'image',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const handleRemoveImage = () => {
+    form.setValue('photo', '', { shouldValidate: true });
+  };
 
-  const handleSubmit = async (data: ArtisanFormData) => {
-    await onSubmit({
-      nom: data.nom,
-      prenom: data.prenom,
-      specialite: data.specialite,
-      telephone: data.telephone,
-      email: data.email,
-      adresse: data.adresse,
-      departement: data.departement,
-      photo: data.photo || '/api/placeholder/150/150',
-    });
-    form.reset();
-    onClose();
+  const handleSubmit = async (formData: ArtisanFormData) => {
+    try {
+      setIsSubmitting(true);
+      
+      // Gérer l'upload de l'image si c'est un fichier
+      let photoUrl = formData.photo || '';
+      if (formData.photo instanceof File) {
+        try {
+          // Simuler un upload
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Simulation de délai
+          photoUrl = await toBase64(formData.photo);
+        } catch (error) {
+          console.error('Erreur lors de l\'upload de l\'image:', error);
+          throw new Error('Échec de l\'upload de l\'image. Veuillez réessayer.');
+        }
+      }
+      
+      await onSubmit({
+        nom: formData.nom,
+        prenom: formData.prenom,
+        specialite: formData.specialite,
+        telephone: formData.telephone,
+        email: formData.email,
+        adresse: formData.adresse,
+        departement: formData.departement,
+        photo: photoUrl || '/api/placeholder/150/150',
+      });
+      
+      form.reset();
+      onClose();
+      
+      toast({
+        title: 'Succès',
+        description: artisan ? 'L\'artisan a été mis à jour avec succès.' : 'L\'artisan a été créé avec succès.',
+        duration: 5000,
+      });
+      
+    } catch (error) {
+      console.error('Erreur lors de la soumission du formulaire:', error);
+      
+      toast({
+        title: 'Erreur',
+        description: error instanceof Error ? error.message : 'Une erreur est survenue lors de la sauvegarde de l\'artisan.',
+        variant: 'destructive',
+        duration: 5000,
+      });
+      
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -205,9 +284,24 @@ export const ArtisanForm: React.FC<ArtisanFormProps> = ({
               name="photo"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>URL de la photo (optionnel)</FormLabel>
+                  <FormLabel>Photo de l'artisan</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://..." {...field} />
+                    <div className="space-y-4">
+                      <ImageUpload
+                        currentImage={typeof field.value === 'string' ? field.value : ''}
+                        onUpload={handleImageUpload}
+                        onRemove={handleRemoveImage}
+                      />
+                      <div className="text-sm text-muted-foreground">
+                        Téléchargez une image ou entrez une URL (max 5MB, JPG/PNG/WebP)
+                      </div>
+                      <Input 
+                        placeholder="Ou entrez une URL d'image..." 
+                        value={typeof field.value === 'string' ? field.value : ''}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        className="mt-2"
+                      />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -218,8 +312,8 @@ export const ArtisanForm: React.FC<ArtisanFormProps> = ({
               <Button type="button" variant="outline" onClick={handleClose}>
                 Annuler
               </Button>
-              <Button type="submit" disabled={isLoading} className="btn-primary">
-                {isLoading ? 'Enregistrement...' : artisan ? 'Modifier' : 'Créer'}
+              <Button type="submit" disabled={isLoading || isSubmitting} className="btn-primary">
+                {(isLoading || isSubmitting) ? 'Enregistrement...' : artisan ? 'Modifier' : 'Créer'}
               </Button>
             </div>
           </form>

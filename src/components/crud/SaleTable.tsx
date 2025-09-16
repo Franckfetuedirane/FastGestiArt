@@ -67,16 +67,36 @@ export const SaleTable: React.FC<SaleTableProps> = ({
 
   const filteredSales = sales
     .map(sale => {
-      // Charger les relations
-      const enhancedItems = sale.items.map(item => ({
-        ...item,
-        product: products.find(p => p.id === item.productId)
-      }));
+      // S'assurer que les items sont un tableau et charger les relations
+      const items = Array.isArray(sale.items) ? sale.items : [];
       
-      const artisan = artisans.find(a => a.id === sale.artisanId);
+      const enhancedItems = items.map(item => {
+        const product = products.find(p => p.id === item.productId);
+        return {
+          ...item,
+          product,
+          // Fournir des valeurs par défaut pour éviter les erreurs d'affichage
+          quantite: item.quantite || 0,
+          prixUnitaire: item.prixUnitaire || 0,
+          montant: item.montant || (item.prixUnitaire || 0) * (item.quantite || 1)
+        };
+      });
+      
+      // Trouver l'artisan correspondant ou utiliser un objet par défaut
+      const artisan = artisans.find(a => a.id === sale.artisanId) || {
+        id: 'inconnu',
+        nom: 'Artisan inconnu',
+        prenom: ''
+      };
       
       return {
         ...sale,
+        // Fournir des valeurs par défaut pour les champs obligatoires
+        numeroFacture: sale.numeroFacture || 'N/A',
+        clientNom: sale.clientNom || 'Client inconnu',
+        montantTotal: sale.montantTotal || 0,
+        statut: sale.statut || 'terminée',
+        dateDVente: sale.dateDVente || new Date().toISOString(),
         items: enhancedItems,
         artisan
       } as EnhancedSale;
@@ -84,19 +104,35 @@ export const SaleTable: React.FC<SaleTableProps> = ({
     .filter(sale => {
       if (!searchTerm) return true;
       
-      const searchLower = searchTerm.toLowerCase();
-      const productNames = sale.items
-        .map(item => item.product?.nom || '')
-        .join(' ')
-        .toLowerCase();
+      const searchLower = searchTerm.toLowerCase().trim();
+      if (!searchLower) return true;
       
-      return (
-        sale.numeroFacture?.toLowerCase().includes(searchLower) ||
-        sale.clientNom?.toLowerCase().includes(searchLower) ||
-        productNames.includes(searchLower) ||
-        sale.artisan?.nom?.toLowerCase().includes(searchLower) ||
-        sale.artisan?.prenom?.toLowerCase().includes(searchLower)
+      // Recherche sur le numéro de facture
+      if (sale.numeroFacture?.toLowerCase().includes(searchLower)) {
+        return true;
+      }
+      
+      // Recherche sur le nom du client
+      if (sale.clientNom?.toLowerCase().includes(searchLower)) {
+        return true;
+      }
+      
+      // Recherche sur les noms des produits
+      const productMatch = sale.items.some(item => 
+        item.product?.nom?.toLowerCase().includes(searchLower)
       );
+      if (productMatch) return true;
+      
+      // Recherche sur le nom de l'artisan
+      if (
+        sale.artisan?.nom?.toLowerCase().includes(searchLower) ||
+        sale.artisan?.prenom?.toLowerCase().includes(searchLower) ||
+        `${sale.artisan?.prenom || ''} ${sale.artisan?.nom || ''}`.toLowerCase().includes(searchLower)
+      ) {
+        return true;
+      }
+      
+      return false;
     });
     
   console.log(`[SaleTable] ${filteredSales.length} ventes après filtrage`);

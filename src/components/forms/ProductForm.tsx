@@ -149,7 +149,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
       try {
         const [categoriesData, artisansData] = await Promise.all([
-          categoryAPI.getCategories(),
+          categoryAPI.getAll(),
           artisanAPI.getArtisans(),
         ]);
 

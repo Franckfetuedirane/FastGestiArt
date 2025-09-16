@@ -19,6 +19,7 @@ interface SaleFormProps {
   onSubmit: (data: Omit<Sale, 'id'>) => Promise<void>;
   products: Product[];
   artisans: ArtisanProfile[];
+  sale?: Sale | null;
   isLoading?: boolean;
 }
 
@@ -39,8 +40,10 @@ export const SaleForm: React.FC<SaleFormProps> = ({
   onSubmit,
   products,
   artisans,
+  sale = null,
   isLoading = false,
 }) => {
+  // Déclarer tous les états en premier
   const [clientName, setClientName] = useState('');
   const [artisanId, setArtisanId] = useState('');
   const [saleItems, setSaleItems] = useState<SaleItemForm[]>([{
@@ -49,6 +52,46 @@ export const SaleForm: React.FC<SaleFormProps> = ({
     unitPrice: 0,
     totalPrice: 0
   }]);
+
+  // Fonction pour réinitialiser le formulaire
+  const resetForm = React.useCallback(() => {
+    setClientName('');
+    setArtisanId('');
+    setSaleItems([{
+      productId: '',
+      quantity: 1,
+      unitPrice: 0,
+      totalPrice: 0
+    }]);
+  }, [setClientName, setArtisanId, setSaleItems]);
+
+  // Initialiser le formulaire avec les données de la vente à éditer
+  useEffect(() => {
+    if (sale) {
+      setClientName(sale.clientNom || '');
+      setArtisanId(sale.artisanId || '');
+      
+      // Convertir les items de la vente en format de formulaire
+      const initialItems = sale.items?.length > 0 
+        ? sale.items.map(item => ({
+            productId: item.productId,
+            quantity: item.quantite || 1,
+            unitPrice: item.prixUnitaire || 0,
+            totalPrice: item.montant || 0
+          }))
+        : [{
+            productId: '',
+            quantity: 1,
+            unitPrice: 0,
+            totalPrice: 0
+          }];
+      
+      setSaleItems(initialItems);
+    } else {
+      // Réinitialiser le formulaire pour une nouvelle vente
+      resetForm();
+    }
+  }, [sale, resetForm]);
 
   // Mémoriser les produits filtrés par artisan
   const filteredProducts = React.useMemo(() => 
@@ -144,52 +187,68 @@ export const SaleForm: React.FC<SaleFormProps> = ({
     e.preventDefault();
     
     const artisan = artisans.find(a => a.id === artisanId);
-    if (!artisan) return;
+    if (!artisan) {
+      console.error('Aucun artisan sélectionné');
+      return;
+    }
+
+    // Vérifier qu'il y a au moins un article valide
+    const validItems = saleItems.filter(item => item.productId && item.quantity > 0);
+    if (validItems.length === 0) {
+      console.error('Veuillez ajouter au moins un article à la vente');
+      return;
+    }
 
     // Convertir les articles du formulaire en format SaleItem
-    const items: GlobalSaleItem[] = saleItems
-      .filter(item => item.productId && item.quantity > 0)
-      .map(item => {
-        const product = products.find(p => p.id === item.productId);
-        return {
-          productId: item.productId,
-          product: product,
-          quantite: item.quantity,
-          prixUnitaire: item.unitPrice,
-          montant: item.totalPrice
-        };
-      });
+    const items: GlobalSaleItem[] = validItems.map(item => {
+      const product = products.find(p => p.id === item.productId);
+      if (!product) {
+        throw new Error(`Produit avec l'ID ${item.productId} introuvable`);
+      }
 
+      // Vérifier le stock disponible
+      if (product.stock !== undefined && item.quantity > product.stock) {
+        throw new Error(`Stock insuffisant pour le produit ${product.nom}. Stock disponible: ${product.stock}`);
+      }
+
+      return {
+        productId: item.productId,
+        product: product,
+        quantite: item.quantity,
+        prixUnitaire: item.unitPrice,
+        montant: item.totalPrice,
+        remise: 0 // Par défaut, pas de remise
+      };
+    });
+
+    // Calculer le montant total
+    const montantTotal = items.reduce((sum, item) => sum + item.montant, 0);
+
+    // Préparer les données de la vente
     const saleData: Omit<Sale, 'id'> = {
-      clientNom: clientName,
+      clientNom: clientName.trim(),
       artisanId: artisanId,
       artisan: artisan,
-      dateDVente: new Date().toISOString(),
-      numeroFacture: `FACT-${format(new Date(), 'yyyyMMdd-HHmmss')}`,
-      montantTotal: calculateTotal(saleItems),
+      dateDVente: sale?.dateDVente || new Date().toISOString(), // Conserver la date d'origine pour les mises à jour
+      numeroFacture: sale?.numeroFacture || `FACT-${format(new Date(), 'yyyyMMdd-HHmmss')}`,
+      montantTotal: montantTotal,
       items: items,
-      statut: 'validee', // Par défaut, la vente est validée
-      modePaiement: 'especes' // Par défaut, paiement en espèces
+      statut: sale?.statut || 'validee',
+      modePaiement: sale?.modePaiement || 'especes',
+      notes: sale?.notes || ''
     };
 
     try {
       await onSubmit(saleData);
       resetForm();
     } catch (error) {
-      console.error('Erreur lors de la création de la vente:', error);
+      console.error('Erreur lors de la soumission du formulaire:', error);
+      // L'erreur sera gérée par le composant parent
+      throw error;
     }
   };
 
-  const resetForm = () => {
-    setClientName('');
-    setArtisanId('');
-    setSaleItems([{
-      productId: '',
-      quantity: 1,
-      unitPrice: 0,
-      totalPrice: 0
-    }]);
-  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {

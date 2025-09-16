@@ -125,6 +125,7 @@ const SalesPage: React.FC = () => {
       }
       setIsFormOpen(false);
       setEditingSale(null);
+      await loadInitialData(); // Recharger les données
     } catch (error) {
       toast({
         title: "Erreur",

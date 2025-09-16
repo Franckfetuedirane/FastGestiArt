@@ -4,7 +4,7 @@ import { ArtisanTable } from '@/components/crud/ArtisanTable';
 import { ViewArtisanModal } from '@/components/modals/ViewArtisanModal';
 import { ArtisanForm } from '@/components/forms/ArtisanForm';
 import { ArtisanProfile } from '@/types';
-import { artisansAPI } from '@/services/apiService';
+import { artisansAPI } from '@/services/api/artisanAPI';
 import { useToast } from '@/hooks/use-toast';
 
 const ArtisansPage: React.FC = () => {

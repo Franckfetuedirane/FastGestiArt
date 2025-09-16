@@ -3,7 +3,9 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { ProductTable } from '@/components/crud/ProductTable';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { Product, Category, ArtisanProfile } from '@/types';
-import { productsAPI, categoriesAPI, artisansAPI } from '@/services/apiService';
+import { productsAPI } from '@/services/api/productAPI';
+import { categoriesAPI } from '@/services/api/categoryAPI';
+import { artisansAPI } from '@/services/api/artisanAPI';
 import { useToast } from '@/hooks/use-toast';
 
 const ProductsPage: React.FC = () => {

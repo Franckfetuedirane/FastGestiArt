@@ -5,7 +5,7 @@ import { SaleForm } from '@/components/forms/SaleForm';
 import { ViewSaleModal } from '@/components/modals/ViewSaleModal';
 import { Sale, Product, ArtisanProfile } from '@/types';
 import { saleService } from '@/services/saleService';
-import { artisansAPI } from '@/services/apiService';
+import { artisanAPI } from '@/services/api/artisanAPI';
 import { useToast } from '@/hooks/use-toast';
 import { productService } from '@/services/productService';
 
@@ -33,7 +33,7 @@ const SalesPage: React.FC = () => {
       const [salesResult, productsResult, artisansResult] = await Promise.allSettled([
         saleService.getAll(),
         productService.getAll(),
-        artisansAPI.getAll()
+        artisanAPI.getAll()
       ]);
       
       // Gestion des résultats

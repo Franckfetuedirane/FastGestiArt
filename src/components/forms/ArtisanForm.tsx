@@ -59,7 +59,7 @@ interface ArtisanFormProps {
   artisan?: ArtisanProfile | null;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Omit<ArtisanProfile, 'id' | 'dateInscription' | 'dateCreation' | 'updatedAt'>) => Promise<void>;
+  onSubmit: (formData: FormData) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -72,17 +72,26 @@ export const ArtisanForm: React.FC<ArtisanFormProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const form = useForm<ArtisanFormData>({
+  const form = useForm<z.infer<typeof artisanSchema>>({
     resolver: zodResolver(artisanSchema),
-    defaultValues: {
-      nom: artisan?.nom || '',
-      prenom: artisan?.prenom || '',
-      specialite: artisan?.specialite || '',
-      telephone: artisan?.telephone || '',
-      email: artisan?.email || '',
-      adresse: artisan?.adresse || '',
-      departement: artisan?.departement || '',
-      photo: artisan?.photo || '',
+    defaultValues: artisan ? {
+      nom: artisan.nom,
+      prenom: artisan.prenom,
+      specialite: artisan.specialite,
+      telephone: artisan.telephone,
+      email: artisan.email,
+      adresse: artisan.adresse,
+      departement: artisan.departement,
+      photo: artisan.photo,
+    } : {
+      nom: '',
+      prenom: '',
+      specialite: '',
+      telephone: '',
+      email: '',
+      adresse: '',
+      departement: '',
+      photo: '',
     },
   });
   

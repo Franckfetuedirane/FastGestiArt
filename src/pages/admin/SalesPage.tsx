@@ -4,10 +4,10 @@ import { SaleTable } from '@/components/crud/SaleTable';
 import { SaleForm } from '@/components/forms/SaleForm';
 import { ViewSaleModal } from '@/components/modals/ViewSaleModal';
 import { Sale, Product, ArtisanProfile } from '@/types';
-import { saleService } from '@/services/saleService';
+import { saleAPI } from '@/services/api/saleAPI';
 import { artisanAPI } from '@/services/api/artisanAPI';
+import { productAPI } from '@/services/api/productAPI';
 import { useToast } from '@/hooks/use-toast';
-import { productService } from '@/services/productService';
 
 const SalesPage: React.FC = () => {
   const [sales, setSales] = useState<Sale[]>([]);
@@ -30,9 +30,10 @@ const SalesPage: React.FC = () => {
     
     try {
       // Chargement en parallèle des ventes, produits et artisans avec gestion des erreurs individuelles
+      console.log('Chargement des données des ventes...');
       const [salesResult, productsResult, artisansResult] = await Promise.allSettled([
-        saleService.getAll(),
-        productService.getAll(),
+        saleAPI.getAll(),
+        productAPI.getAll(),
         artisanAPI.getAll()
       ]);
       
@@ -41,17 +42,43 @@ const SalesPage: React.FC = () => {
       const productsData = productsResult.status === 'fulfilled' ? productsResult.value : [];
       const artisansData = artisansResult.status === 'fulfilled' ? artisansResult.value : [];
       
+      console.log('Données chargées:', { 
+        sales: salesData.length, 
+        products: productsData.length, 
+        artisans: artisansData.length 
+      });
+      
+      setSales(salesData);
+      setProducts(productsData);
+      setArtisans(artisansData);
+      
       if (salesResult.status === 'rejected') {
         console.error('Erreur lors du chargement des ventes:', salesResult.reason);
-      }
-      if (productsResult.status === 'rejected') {
-        console.error('Erreur lors du chargement des produits:', productsResult.reason);
-      }
-      if (artisansResult.status === 'rejected') {
-        console.error('Erreur lors du chargement des artisans:', artisansResult.reason);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les ventes.",
+          variant: "destructive"
+        });
       }
       
-      console.log(`${salesData.length} ventes chargées`);
+      if (productsResult.status === 'rejected') {
+        console.error('Erreur lors du chargement des produits:', productsResult.reason);
+        toast({
+          title: "Avertissement",
+          description: "Certains produits n'ont pas pu être chargés.",
+          variant: "destructive"
+        });
+      }
+      
+      if (artisansResult.status === 'rejected') {
+        console.error('Erreur lors du chargement des artisans:', artisansResult.reason);
+        toast({
+          title: "Avertissement",
+          description: "Certains artisans n'ont pas pu être chargés.",
+          variant: "destructive"
+        });
+      }
+      
       console.log(`${productsData.length} produits chargés`);
       console.log(`${artisansData.length} artisans chargés`);
       
@@ -105,48 +132,54 @@ const SalesPage: React.FC = () => {
   };
 
   const handleSubmit = async (data: Omit<Sale, 'id'>) => {
+    setIsLoading(true);
     try {
       if (editingSale) {
-        // Mise à jour
-        const updatedSale = await saleService.update(editingSale.id, data);
-        setSales(prev => prev.map(s => s.id === editingSale.id ? updatedSale : s));
+        // Pour la mise à jour, on supprime l'ancienne vente et on en crée une nouvelle
+        await saleAPI.delete(editingSale.id);
+        const newSale = await saleAPI.create(data);
+        setSales(prev => prev.map(s => s.id === editingSale.id ? newSale : s));
         toast({
-          title: "Succès",
-          description: "La vente a été modifiée avec succès.",
+          title: "Vente mise à jour",
+          description: `La vente a été mise à jour avec succès.`,
         });
       } else {
-        // Création
-        const newSale = await saleService.create(data);
+        // Création d'une nouvelle vente
+        const newSale = await saleAPI.create(data);
         setSales(prev => [...prev, newSale]);
         toast({
-          title: "Succès",
-          description: "La vente a été créée avec succès.",
+          title: "Vente créée",
+          description: `La vente a été créée avec succès.`,
         });
       }
       setIsFormOpen(false);
       setEditingSale(null);
       await loadInitialData(); // Recharger les données
     } catch (error) {
+      console.error('Erreur lors de la sauvegarde de la vente:', error);
       toast({
         title: "Erreur",
         description: "Impossible de sauvegarder la vente.",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
-      await saleService.delete(id);
-      setSales(prev => prev.filter(s => s.id !== id));
+      await saleAPI.delete(id);
+      setSales(prev => prev.filter(sale => sale.id !== id));
       toast({
-        title: "Succès",
-        description: "La vente a été supprimée et le stock a été mis à jour.",
+        title: "Vente supprimée",
+        description: "La vente a été supprimée avec succès.",
       });
     } catch (error) {
+      console.error('Erreur lors de la suppression de la vente:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de supprimer la vente.",
+        description: "Une erreur est survenue lors de la suppression de la vente.",
         variant: "destructive"
       });
     }

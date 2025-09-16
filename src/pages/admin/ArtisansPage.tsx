@@ -4,7 +4,7 @@ import { ArtisanTable } from '@/components/crud/ArtisanTable';
 import { ViewArtisanModal } from '@/components/modals/ViewArtisanModal';
 import { ArtisanForm } from '@/components/forms/ArtisanForm';
 import { ArtisanProfile } from '@/types';
-import { artisansAPI } from '@/services/api/artisanAPI';
+import { artisanAPI } from '@/services/api/artisanAPI';
 import { useToast } from '@/hooks/use-toast';
 
 const ArtisansPage: React.FC = () => {
@@ -23,7 +23,9 @@ const ArtisansPage: React.FC = () => {
 
   const loadArtisans = async () => {
     try {
-      const data = await artisansAPI.getAll();
+      console.log('Chargement des artisans...');
+      const data = await artisanAPI.getAll();
+      console.log('Artisans chargés:', data);
       setArtisans(data);
     } catch (error) {
       toast({
@@ -53,12 +55,17 @@ const ArtisansPage: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      await artisansAPI.delete(id);
+      await artisanAPI.delete(id);
       setArtisans(prev => prev.filter(a => a.id !== id));
+      toast({
+        title: "Succès",
+        description: "L'artisan a été supprimé avec succès.",
+      });
     } catch (error) {
+      console.error('Erreur lors de la suppression de l\'artisan:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de supprimer l'artisan.",
+        description: "Une erreur est survenue lors de la suppression de l'artisan.",
         variant: "destructive"
       });
     }
@@ -74,34 +81,42 @@ const ArtisansPage: React.FC = () => {
     );
   }
 
-  const handleSubmit = async (data: Omit<ArtisanProfile, 'id' | 'dateInscription' | 'dateCreation' | 'updatedAt'>) => {
+  const handleSubmit = async (formData: FormData) => {
     setIsSubmitting(true);
     try {
+      // Créer un objet avec les champs de l'artisan
+      const artisanData = {
+        nom: formData.get('nom') as string,
+        prenom: formData.get('prenom') as string,
+        specialite: formData.get('specialite') as string,
+        telephone: formData.get('telephone') as string,
+        email: formData.get('email') as string,
+        adresse: formData.get('adresse') as string,
+        departement: formData.get('departement') as string,
+        photo: formData.get('photo') as string,
+        statut: 'actif' as const,
+        dateInscription: new Date().toISOString(),
+      };
+
       if (editingArtisan) {
-        const updatedData = { ...editingArtisan, ...data, updatedAt: new Date().toISOString() };
-        await artisansAPI.update(editingArtisan.id, updatedData);
-        setArtisans(prev => prev.map(a => 
-          a.id === editingArtisan.id 
-            ? updatedData
-            : a
-        ));
+        // Mise à jour d'un artisan existant
+        const updatedArtisan = await artisanAPI.update(editingArtisan.id, formData);
+        setArtisans(prev => prev.map(a => a.id === editingArtisan.id ? updatedArtisan : a));
         toast({
-          title: "Artisan modifié",
-          description: `${data.prenom} ${data.nom} a été modifié avec succès.`,
+          title: "Artisan mis à jour",
+          description: `${artisanData.prenom} ${artisanData.nom} a été mis à jour avec succès.`,
         });
       } else {
-        const now = new Date().toISOString();
-        const newArtisanData = {
-          ...data,
-          dateInscription: now,
-          dateCreation: now,
-          updatedAt: now
-        };
-        const newArtisan = await artisansAPI.create(newArtisanData);
+        // Création d'un nouvel artisan
+        formData.append('id', `artisan-${Date.now()}`);
+        formData.append('dateInscription', new Date().toISOString());
+        formData.append('statut', 'actif');
+        
+        const newArtisan = await artisanAPI.create(formData);
         setArtisans(prev => [...prev, newArtisan]);
         toast({
           title: "Artisan créé",
-          description: `${data.prenom} ${data.nom} a été créé avec succès.`,
+          description: `${artisanData.prenom} ${artisanData.nom} a été créé avec succès.`,
         });
       }
       setIsFormOpen(false);

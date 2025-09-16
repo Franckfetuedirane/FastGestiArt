@@ -3,9 +3,9 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { ProductTable } from '@/components/crud/ProductTable';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { Product, Category, ArtisanProfile } from '@/types';
-import { productsAPI } from '@/services/api/productAPI';
-import { categoriesAPI } from '@/services/api/categoryAPI';
-import { artisansAPI } from '@/services/api/artisanAPI';
+import { productAPI } from '@/services/api/productAPI';
+import { categoryAPI } from '@/services/api/categoryAPI';
+import { artisanAPI } from '@/services/api/artisanAPI';
 import { useToast } from '@/hooks/use-toast';
 
 const ProductsPage: React.FC = () => {
@@ -24,9 +24,9 @@ const ProductsPage: React.FC = () => {
   const loadInitialData = async () => {
     try {
       const [productsData, categoriesData, artisansData] = await Promise.all([
-        productsAPI.getAll(),
-        categoriesAPI.getAll(),
-        artisansAPI.getAll()
+        productAPI.getAll(),
+        categoryAPI.getAll(),
+        artisanAPI.getAll()
       ]);
       setProducts(productsData);
       setCategories(categoriesData);
@@ -55,14 +55,16 @@ const ProductsPage: React.FC = () => {
   const handleSubmit = async (data: Omit<Product, 'id' | 'dateCreation'>) => {
     try {
       if (editingProduct) {
-        const updatedProduct = await productsAPI.update(editingProduct.id, data);
-        setProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
+        // Pour la mise à jour, on supprime l'ancien produit et on en crée un nouveau
+        await productAPI.delete(editingProduct.id);
+        const newProduct = await productAPI.create(data);
+        setProducts(prev => prev.map(p => p.id === editingProduct.id ? newProduct : p));
         toast({
           title: "Succès",
           description: "Le produit a été modifié avec succès.",
         });
       } else {
-        const newProduct = await productsAPI.create(data);
+        const newProduct = await productAPI.create(data);
         setProducts(prev => [...prev, newProduct]);
         toast({
           title: "Succès",

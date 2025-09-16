@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from '@/components/ui/use-toast';
-import { localStorageService } from '@/services/localStorageService';
 import {
   Dialog,
   DialogContent,
@@ -142,92 +141,62 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   // Charger les données nécessaires
   useEffect(() => {
     let isMounted = true;
-    
+
     const loadData = async () => {
       if (!isOpen) return;
-      
-      console.log('Chargement des données du formulaire...');
+
       setIsLoadingData(true);
-      
+
       try {
-        // Charger d'abord les catégories depuis le localStorage
-        const categoriesData = localStorageService.getCategories();
-        console.log('Catégories chargées depuis le localStorage:', categoriesData);
-        
-        // Charger les artisans depuis le localStorage
-        const artisansData = localStorageService.getArtisans();
-        console.log('Artisans chargés depuis le localStorage:', artisansData);
-        
-        // Mapper les données des artisans pour correspondre à l'interface ArtisanProfile
-        const mappedArtisans = artisansData.map(artisan => ({
-          id: artisan.id,
-          nom: artisan.nom || '',
-          prenom: artisan.prenom || '',
-          specialite: artisan.specialite || 'Non spécifié',
-          telephone: artisan.telephone || '',
-          email: artisan.email || '',
-          adresse: artisan.adresse || '',
-          departement: artisan.departement || 'Non spécifié',
-          dateInscription: artisan.dateInscription || new Date().toISOString(),
-          photo: artisan.photo || '',
-          dateCreation: artisan.dateCreation || new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }));
-        
+        const [categoriesData, artisansData] = await Promise.all([
+          categoryAPI.getCategories(),
+          artisanAPI.getArtisans(),
+        ]);
+
         if (!isMounted) return;
-        
-        // Mettre à jour l'état avec les données chargées
-        setArtisans(mappedArtisans);
+
+        setArtisans(artisansData);
         setCategories(categoriesData);
-        
-        // Mettre à jour les valeurs du formulaire
+
         const formValues: Partial<ProductFormData> = {};
-        
-        // Définir l'artisan par défaut s'il n'est pas déjà défini
-        if (mappedArtisans.length > 0) {
-          const defaultArtisanId = product?.artisanId || (mappedArtisans[0]?.id || '');
+
+        if (artisansData.length > 0) {
+          const defaultArtisanId = product?.artisanId || artisansData[0]?.id || '';
           formValues.artisanId = defaultArtisanId;
-          console.log('Artisan par défaut défini:', defaultArtisanId);
         }
-        
-        // Définir la catégorie si disponible
+
         if (product?.categorie) {
           formValues.categorie = product.categorie;
         } else if (categoriesData.length > 0) {
           formValues.categorie = categoriesData[0].name;
         }
-        
-        // Mettre à jour le formulaire avec les valeurs par défaut
+
         form.reset({
           ...form.getValues(),
-          ...formValues
+          ...formValues,
         });
-        
-        // Forcer la validation des champs mis à jour
+
         if (formValues.artisanId) form.trigger('artisanId');
         if (formValues.categorie) form.trigger('categorie');
-        
+
       } catch (error) {
         console.error('Erreur lors du chargement des données:', error);
         toast({
           title: 'Erreur',
           description: 'Impossible de charger les données nécessaires pour le formulaire.',
-          variant: 'destructive'
+          variant: 'destructive',
         });
       } finally {
         if (isMounted) {
-          console.log('Fin du chargement des données du formulaire');
           setIsLoadingData(false);
         }
       }
     };
-    
-    // Charger les données lorsque le formulaire est ouvert
+
     if (isOpen) {
       loadData();
     }
-    
-    // Nettoyage lors du démontage du composant
+
     return () => {
       isMounted = false;
     };

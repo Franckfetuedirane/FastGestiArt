@@ -45,8 +45,9 @@ export const ArtisanSalesPage: React.FC = () => {
     };
 
     const filteredSales = sales.filter(sale => {
+        const firstItem = sale.items && sale.items.length > 0 ? sale.items[0] : null;
         const matchesSearch = sale.clientNom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            sale.product?.nom?.toLowerCase().includes(searchTerm.toLowerCase());
+            firstItem?.product?.nom?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = filterStatus === 'all' || (sale as any).statut === filterStatus;
         return matchesSearch && matchesStatus;
     });
@@ -203,6 +204,7 @@ export const ArtisanSalesPage: React.FC = () => {
                             <TableBody>
                                 {filteredSales.map((sale) => {
                                     const statusBadge = getStatusBadge((sale as any).statut || 'completed');
+                                    const firstItem = sale.items && sale.items.length > 0 ? sale.items[0] : null;
                                     return (
                                         <TableRow key={sale.id}>
                                             <TableCell>
@@ -212,10 +214,10 @@ export const ArtisanSalesPage: React.FC = () => {
                                                 {sale.clientNom || 'N/A'}
                                             </TableCell>
                                             <TableCell>
-                                                {sale.product?.nom || 'N/A'}
+                                                {firstItem?.product?.nom || 'N/A'}
                                             </TableCell>
                                             <TableCell>
-                                                {sale.quantite}
+                                                {firstItem?.quantite || 'N/A'}
                                             </TableCell>
                                             <TableCell className="font-medium text-green-600">
                                                 {(sale.montantTotal || 0).toLocaleString()} FCFA
@@ -291,11 +293,11 @@ export const ArtisanSalesPage: React.FC = () => {
                                     </div>
                                     <div>
                                         <label className="text-sm font-medium text-muted-foreground">Produit</label>
-                                        <p className="text-lg font-semibold">{selectedSale.product?.nom || 'N/A'}</p>
+                                        <p className="text-lg font-semibold">{selectedSale.items[0]?.product?.nom || 'N/A'}</p>
                                     </div>
                                     <div>
                                         <label className="text-sm font-medium text-muted-foreground">Quantité</label>
-                                        <p className="text-lg font-semibold">{selectedSale.quantite}</p>
+                                        <p className="text-lg font-semibold">{selectedSale.items[0]?.quantite}</p>
                                     </div>
                                     <div>
                                         <label className="text-sm font-medium text-muted-foreground">Montant total</label>

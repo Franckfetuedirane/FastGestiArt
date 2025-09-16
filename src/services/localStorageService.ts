@@ -105,159 +105,44 @@ export const localStorageService = {
   // Initialisation avec des données par défaut si vide
   initializeIfEmpty: (): void => {
     if (typeof window === 'undefined') return;
-    
-    // Vérifier et initialiser chaque clé si nécessaire
-    if (!localStorage.getItem(STORAGE_KEYS.PRODUCTS)) {
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([]));
-    }
-    
-    if (!localStorage.getItem(STORAGE_KEYS.CATEGORIES)) {
-      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify([]));
-    }
-    
-    if (!localStorage.getItem(STORAGE_KEYS.ARTISANS)) {
-      localStorage.setItem(STORAGE_KEYS.ARTISANS, JSON.stringify([]));
-    }
-    
-    if (!localStorage.getItem(STORAGE_KEYS.SALES)) {
-      localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify([]));
-    }
-    
-    // Initialiser les catégories avec des données par défaut si elles n'existent pas
-    if (!localStorage.getItem(STORAGE_KEYS.CATEGORIES)) {
-      const defaultCategories: Category[] = [
-        {
-          id: 'cat-1',
-          name: 'Poterie',
-          description: 'Objets en céramique et terre cuite',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 'cat-2',
-          name: 'Textile',
-          description: 'Vêtements et accessoires en tissu',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 'cat-3',
-          name: 'Bois',
-          description: 'Objets en bois sculpté ou tourné',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 'cat-4',
-          name: 'Métal',
-          description: 'Objets en métal forgé ou travaillé',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 'cat-5',
-          name: 'Vannerie',
-          description: 'Objets tressés en osier ou rotin',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ];
-      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(defaultCategories));
-    }
-    
-    // Initialiser les artisans avec des données par défaut s'ils n'existent pas
-    if (!localStorage.getItem(STORAGE_KEYS.ARTISANS)) {
-      const defaultArtisans: ArtisanProfile[] = [
-        {
-          id: 'artisan-1',
-          nom: 'Dupont',
-          prenom: 'Marie',
-          specialite: 'Céramique',
-          telephone: '0601020304',
-          email: 'marie.dupont@example.com',
-          adresse: '123 Rue des Artisans, 75000 Paris',
-          departement: 'Paris',
-          dateInscription: new Date().toISOString(),
-          photo: 'https://randomuser.me/api/portraits/women/44.jpg',
-          dateCreation: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 'artisan-2',
-          nom: 'Martin',
-          prenom: 'Jean',
-          specialite: 'Menuiserie',
-          telephone: '0602030405',
-          email: 'jean.martin@example.com',
-          adresse: '456 Avenue du Bois, 69000 Lyon',
-          departement: 'Rhône',
-          dateInscription: new Date().toISOString(),
-          photo: 'https://randomuser.me/api/portraits/men/32.jpg',
-          dateCreation: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 'artisan-3',
-          nom: 'Bernard',
-          prenom: 'Sophie',
-          specialite: 'Tissage',
-          telephone: '0603040506',
-          email: 'sophie.bernard@example.com',
-          adresse: '789 Boulevard des Tisserands, 31000 Toulouse',
-          departement: 'Haute-Garonne',
-          dateInscription: new Date().toISOString(),
-          photo: 'https://randomuser.me/api/portraits/women/68.jpg',
-          dateCreation: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ];
-      localStorage.setItem(STORAGE_KEYS.ARTISANS, JSON.stringify(defaultArtisans));
-    }
-    
-    // Initialiser les utilisateurs avec des comptes par défaut s'ils n'existent pas
-    if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-      const now = new Date().toISOString();
-      
-      // Compte administrateur
-      const adminUser: User = {
-        id: 'admin-1',
-        email: 'admin@gestiart.com',
-        user_type: 'admin',
-        nom: 'Admin',
-        prenom: 'Système',
-        telephone: '0600000000',
-        adresse: 'Siège social',
-        dateCreation: now,
-        updatedAt: now,
-        lastLogin: now,
-        isActive: true,
-        isSuperAdmin: true
-      };
-      
-      // Compte artisan
-      const artisanUser: User = {
-        id: 'artisan-1',
-        email: 'artisan@gestiart.com',
-        user_type: 'artisan',
-        nom: 'Dupont',
-        prenom: 'Marie',
-        telephone: '0601020304',
-        adresse: '123 Rue des Artisans, 75000 Paris',
-        dateCreation: now,
-        updatedAt: now,
-        lastLogin: now,
-        isActive: true,
-        artisanProfile: {
-          id: 'artisan-profile-1',
-          userId: 'artisan-1',
-          specialite: 'Céramique',
-          description: 'Artisan céramiste spécialisé dans les pièces uniques',
-          anneesExperience: 5,
-          statut: 'actif'
-        }
-      };
-      
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify([adminUser, artisanUser]));
-    }
+
+    const initLocalStorage = <T>(key: string, defaultData: T[]) => {
+      const data = getFromLocalStorage(key, []);
+      if (data.length === 0) {
+        saveToLocalStorage(key, defaultData);
+      }
+    };
+
+    // Initialiser les produits avec un tableau vide
+    initLocalStorage<Product>(STORAGE_KEYS.PRODUCTS, []);
+
+    // Initialiser les catégories avec des données par défaut
+    const defaultCategories: Category[] = [
+      { id: 'cat-1', name: 'Poterie', description: 'Objets en céramique et terre cuite', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'cat-2', name: 'Textile', description: 'Vêtements et accessoires en tissu', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'cat-3', name: 'Bois', description: 'Objets en bois sculpté ou tourné', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'cat-4', name: 'Métal', description: 'Objets en métal forgé ou travaillé', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'cat-5', name: 'Vannerie', description: 'Objets tressés en osier ou rotin', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+    ];
+    initLocalStorage<Category>(STORAGE_KEYS.CATEGORIES, defaultCategories);
+
+    // Initialiser les artisans avec des données par défaut
+    const defaultArtisans: ArtisanProfile[] = [
+      { id: 'artisan-1', nom: 'Dupont', prenom: 'Marie', specialite: 'Céramique', telephone: '0601020304', email: 'marie.dupont@example.com', adresse: '123 Rue des Artisans, 75000 Paris', departement: 'Paris', dateInscription: new Date().toISOString(), photo: 'https://randomuser.me/api/portraits/women/44.jpg', dateCreation: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'artisan-2', nom: 'Martin', prenom: 'Jean', specialite: 'Menuiserie', telephone: '0602030405', email: 'jean.martin@example.com', adresse: '456 Avenue du Bois, 69000 Lyon', departement: 'Rhône', dateInscription: new Date().toISOString(), photo: 'https://randomuser.me/api/portraits/men/32.jpg', dateCreation: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'artisan-3', nom: 'Bernard', prenom: 'Sophie', specialite: 'Tissage', telephone: '0603040506', email: 'sophie.bernard@example.com', adresse: '789 Boulevard des Tisserands, 31000 Toulouse', departement: 'Haute-Garonne', dateInscription: new Date().toISOString(), photo: 'https://randomuser.me/api/portraits/women/68.jpg', dateCreation: new Date().toISOString(), updatedAt: new Date().toISOString() }
+    ];
+    initLocalStorage<ArtisanProfile>(STORAGE_KEYS.ARTISANS, defaultArtisans);
+
+    // Initialiser les ventes avec un tableau vide
+    initLocalStorage<Sale>(STORAGE_KEYS.SALES, []);
+
+    // Initialiser les utilisateurs avec des comptes par défaut
+    const now = new Date().toISOString();
+    const defaultUsers: User[] = [
+      { id: 'admin-1', email: 'admin@gestiart.com', user_type: 'admin', nom: 'Admin', prenom: 'Système', telephone: '0600000000', adresse: 'Siège social', dateCreation: now, updatedAt: now, lastLogin: now, isActive: true, isSuperAdmin: true },
+      { id: 'artisan-1', email: 'artisan@gestiart.com', user_type: 'artisan', nom: 'Dupont', prenom: 'Marie', telephone: '0601020304', adresse: '123 Rue des Artisans, 75000 Paris', dateCreation: now, updatedAt: now, lastLogin: now, isActive: true, artisanProfile: { id: 'artisan-profile-1', userId: 'artisan-1', specialite: 'Céramique', description: 'Artisan céramiste spécialisé dans les pièces uniques', anneesExperience: 5, statut: 'actif' } }
+    ];
+    initLocalStorage<User>(STORAGE_KEYS.USERS, defaultUsers);
   }
 };

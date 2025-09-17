@@ -39,7 +39,7 @@ interface AutoTableOptions {
   startY: number;
   theme?: 'striped' | 'grid' | 'plain';
   headStyles?: { [key: string]: any };
-  didDrawPage?: (data: { [key: string]: any }) => void;
+  didDrawPage?: (data: any) => void;
 }
 
 interface jsPDFWithAutoTable extends jsPDF {

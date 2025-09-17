@@ -13,8 +13,17 @@ interface ReportGeneratorProps {
   dateRange?: { start: string; end: string };
 }
 
+interface AutoTableOptions {
+  head: string[][];
+  body: (string | number)[][];
+  startY: number;
+  theme?: 'striped' | 'grid' | 'plain';
+  headStyles?: { [key: string]: string | number };
+  didDrawPage?: (data: { [key: string]: any }) => void;
+}
+
 interface jsPDFWithAutoTable extends jsPDF {
-  autoTable: (options: any) => jsPDF;
+  autoTable: (options: AutoTableOptions) => void;
 }
 
 export const ReportGenerator: React.FC<ReportGeneratorProps> = ({

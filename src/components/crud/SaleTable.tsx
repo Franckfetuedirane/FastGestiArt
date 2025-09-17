@@ -39,7 +39,7 @@ interface AutoTableOptions {
   startY: number;
   theme?: 'striped' | 'grid' | 'plain';
   headStyles?: { [key: string]: any };
-  didDrawPage?: (data: { [key: string]: any }) => void;
+  didDrawPage?: (data: any) => void;
 }
 
 interface jsPDFWithAutoTable extends jsPDF {
@@ -145,8 +145,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
       return;
     }
 
-    const doc = new jsPDF();
-    const table = doc as jsPDFWithAutoTable; // Pour utiliser autoTable
+    const doc = new jsPDF() as jsPDFWithAutoTable;
 
     // En-tête
     doc.setFontSize(18);
@@ -172,7 +171,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
       ];
     });
 
-    table.autoTable({
+    doc.autoTable({
       startY: 65,
       head: [['Produit', 'Quantité', 'Prix Unitaire', 'Total']],
       body: invoiceBody,
@@ -181,7 +180,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
     });
 
     // Total
-    const finalY = table.lastAutoTable.finalY;
+    const finalY = (doc as any).lastAutoTable.finalY;
     doc.setFontSize(12);
     doc.text('Total:', 14, finalY + 10);
     doc.setFontSize(12);
@@ -196,8 +195,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   };
 
   const exportToPDF = () => {
-    const doc = new jsPDF();
-    const table = doc as jsPDFWithAutoTable;
+    const doc = new jsPDF() as jsPDFWithAutoTable;
 
     doc.setFontSize(18);
     doc.text('Rapport des Ventes', 14, 22);
@@ -219,7 +217,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
       ];
     });
 
-    table.autoTable({
+    doc.autoTable({
       startY: 40,
       head,
       body,
@@ -341,4 +339,3 @@ export const SaleTable: React.FC<SaleTableProps> = ({
     </Card>
   );
 };
-

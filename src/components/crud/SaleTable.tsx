@@ -31,9 +31,19 @@ import { fr } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import jsPDF from 'jspdf';
 import { useToast } from '@/components/ui/use-toast';
+import 'jspdf-autotable';
+
+interface AutoTableOptions {
+  head: string[][];
+  body: (string | number)[][];
+  startY: number;
+  theme?: 'striped' | 'grid' | 'plain';
+  headStyles?: { [key: string]: any };
+  didDrawPage?: (data: any) => void;
+}
 
 interface jsPDFWithAutoTable extends jsPDF {
-  autoTable: (options: any) => jsPDF;
+  autoTable: (options: AutoTableOptions) => jsPDF;
 }
 
 interface SaleTableProps {

@@ -39,7 +39,7 @@ interface AutoTableOptions {
   startY: number;
   theme?: 'striped' | 'grid' | 'plain';
   headStyles?: { [key: string]: any };
-  didDrawPage?: (data: any) => void;
+  didDrawPage?: (data: { [key: string]: any }) => void;
 }
 
 interface jsPDFWithAutoTable extends jsPDF {
@@ -341,3 +341,4 @@ export const SaleTable: React.FC<SaleTableProps> = ({
     </Card>
   );
 };
+

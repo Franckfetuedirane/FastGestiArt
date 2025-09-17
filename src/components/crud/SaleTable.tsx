@@ -32,6 +32,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import jsPDF from 'jspdf';
 import { useToast } from '@/components/ui/use-toast';
 
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: any) => jsPDF;
+}
+
 interface SaleTableProps {
   sales: Sale[];
   products: Product[];
@@ -132,7 +136,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
     }
 
     const doc = new jsPDF();
-    const table = doc as any; // Pour utiliser autoTable
+    const table = doc as jsPDFWithAutoTable; // Pour utiliser autoTable
 
     // En-tête
     doc.setFontSize(18);
@@ -183,7 +187,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
 
   const exportToPDF = () => {
     const doc = new jsPDF();
-    const table = doc as any;
+    const table = doc as jsPDFWithAutoTable;
 
     doc.setFontSize(18);
     doc.text('Rapport des Ventes', 14, 22);

@@ -31,6 +31,20 @@ import { fr } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import jsPDF from 'jspdf';
 import { useToast } from '@/components/ui/use-toast';
+import 'jspdf-autotable';
+
+interface AutoTableOptions {
+  head: string[][];
+  body: (string | number)[][];
+  startY: number;
+  theme?: 'striped' | 'grid' | 'plain';
+  headStyles?: { [key: string]: any };
+  didDrawPage?: (data: { [key: string]: any }) => void;
+}
+
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: AutoTableOptions) => jsPDF;
+}
 
 interface SaleTableProps {
   sales: Sale[];
@@ -85,224 +99,194 @@ export const SaleTable: React.FC<SaleTableProps> = ({
       // Trouver l'artisan correspondant ou utiliser un objet par défaut
       const artisan = artisans.find(a => a.id === sale.artisanId) || {
         id: 'inconnu',
-        nom: 'Artisan inconnu',
-        prenom: ''
+        nom: 'Artisan',
+        prenom: 'Inconnu',
+        specialite: '',
+        telephone: '',
+        email: '',
+        adresse: '',
+        departement: '',
+        photo: '',
+        userId: '',
+        produits: [],
+        ventes: [],
+        dateCreation: new Date().toISOString(),
       };
       
       return {
         ...sale,
-        // Fournir des valeurs par défaut pour les champs obligatoires
-        numeroFacture: sale.numeroFacture || 'N/A',
-        clientNom: sale.clientNom || 'Client inconnu',
-        montantTotal: sale.montantTotal || 0,
-        statut: sale.statut || 'terminée',
-        dateDVente: sale.dateDVente || new Date().toISOString(),
         items: enhancedItems,
-        artisan
-      } as EnhancedSale;
+        artisan,
+      };
     })
-    .filter(sale => {
-      if (!searchTerm) return true;
+    .filter((sale: EnhancedSale) => {
+      const searchTermLower = searchTerm.toLowerCase();
       
-      const searchLower = searchTerm.toLowerCase().trim();
-      if (!searchLower) return true;
+      // Vérifier les champs de base
+      const matchesClient = sale.clientNom?.toLowerCase().includes(searchTermLower);
+      const matchesArtisan = sale.artisan?.nom.toLowerCase().includes(searchTermLower) ||
+                             sale.artisan?.prenom.toLowerCase().includes(searchTermLower);
       
-      // Recherche sur le numéro de facture
-      if (sale.numeroFacture?.toLowerCase().includes(searchLower)) {
-        return true;
-      }
-      
-      // Recherche sur le nom du client
-      if (sale.clientNom?.toLowerCase().includes(searchLower)) {
-        return true;
-      }
-      
-      // Recherche sur les noms des produits
-      const productMatch = sale.items.some(item => 
-        item.product?.nom?.toLowerCase().includes(searchLower)
+      // Vérifier les noms de produits
+      const matchesProduct = sale.items.some(item =>
+        item.product?.nom.toLowerCase().includes(searchTermLower)
       );
-      if (productMatch) return true;
-      
-      // Recherche sur le nom de l'artisan
-      if (
-        sale.artisan?.nom?.toLowerCase().includes(searchLower) ||
-        sale.artisan?.prenom?.toLowerCase().includes(searchLower) ||
-        `${sale.artisan?.prenom || ''} ${sale.artisan?.nom || ''}`.toLowerCase().includes(searchLower)
-      ) {
-        return true;
-      }
-      
-      return false;
+
+      return matchesClient || matchesArtisan || matchesProduct;
     });
-    
-  console.log(`[SaleTable] ${filteredSales.length} ventes après filtrage`);
 
-  const generateInvoice = async (sale: Sale) => {
-    try {
-      const pdf = new jsPDF();
-      
-      // En-tête
-      pdf.setFontSize(20);
-      pdf.text("FACTURE", 105, 20, { align: "center" });
-      
-      pdf.setFontSize(12);
-      pdf.text(`N° : ${sale.numeroFacture || 'N/A'}`, 20, 40);
-      pdf.text(`Date : ${sale.dateDVente ? format(new Date(sale.dateDVente), 'dd MMMM yyyy', { locale: fr }) : 'N/A'}`, 20, 50);
-      
-      // Informations client
-      pdf.text("Client :", 20, 70);
-      pdf.text(sale.clientNom || 'Non spécifié', 60, 70);
-      
-      // Informations artisan
-      pdf.text("Artisan :", 20, 80);
-      pdf.text(sale.artisan ? `${sale.artisan.prenom || ''} ${sale.artisan.nom || ''}`.trim() : 'Non spécifié', 60, 80);
-      
-      // Tableau des produits
-      const headers = ["Produit", "Quantité", "Prix unitaire", "Total"];
-      
-      // Préparer les données du tableau
-      const data = sale.items?.map(item => ({
-        nom: item.product?.nom || 'Produit inconnu',
-        quantite: item.quantite || 0,
-        prixUnitaire: item.prixUnitaire || 0,
-        montant: item.montant || 0
-      })) || [];
-      
-      let startY = 100;
-      
-      // En-tête du tableau
-      pdf.setFillColor(240, 240, 240);
-      pdf.rect(20, startY - 10, 170, 10, "F");
-      
-      // Largeurs des colonnes
-      const colWidths = [70, 25, 35, 40];
-      let xPos = 20;
-      
-      // Dessiner les en-têtes
-      headers.forEach((header, i) => {
-        pdf.text(header, xPos + 5, startY - 2);
-        xPos += colWidths[i];
-      });
-      
-      // Contenu du tableau
-      data.forEach((item, i) => {
-        const yPos = startY + 10 + (i * 10);
-        xPos = 20;
-        
-        // Nom du produit
-        pdf.text(item.nom, xPos + 5, yPos);
-        xPos += colWidths[0];
-        
-        // Quantité
-        pdf.text(item.quantite.toString(), xPos + 5, yPos);
-        xPos += colWidths[1];
-        
-        // Prix unitaire
-        pdf.text(`${item.prixUnitaire.toLocaleString()} FCFA`, xPos + 5, yPos);
-        xPos += colWidths[2];
-        
-        // Montant total
-        pdf.text(`${item.montant.toLocaleString()} FCFA`, xPos + 5, yPos);
-      });
-      
-      // Ligne de séparation
-      const lastY = startY + 20 + (data.length * 10);
-      pdf.setDrawColor(200, 200, 200);
-      pdf.line(20, lastY, 190, lastY);
-      
-      // Total
-      pdf.setFontSize(14);
-      pdf.text(
-        `Total : ${sale.montantTotal ? sale.montantTotal.toLocaleString() : '0'} FCFA`,
-        150,
-        lastY + 15,
-        { align: "right" }
-      );
-
-      // Pied de page
-      pdf.setFontSize(10);
-      pdf.text("Merci de votre confiance!", 105, 270, { align: "center" });
-      
-      // Enregistrer le PDF
-      const fileName = `facture-${sale.numeroFacture || 'sans-numero'}-${new Date().getTime()}.pdf`;
-      pdf.save(fileName);
-      
-      toast({
-        title: "Succès",
-        description: "La facture a été générée avec succès",
-      });
-    } catch (error) {
-      console.error("Erreur lors de la génération de la facture:", error);
+  const generateInvoice = (sale: Sale) => {
+    if (!sale) {
       toast({
         title: "Erreur",
-        description: "Impossible de générer la facture. Veuillez réessayer.",
-        variant: "destructive"
+        description: "Données de vente non disponibles pour générer la facture.",
+        variant: "destructive",
       });
+      return;
     }
+
+    const doc = new jsPDF();
+    const table = doc as jsPDFWithAutoTable; // Pour utiliser autoTable
+
+    // En-tête
+    doc.setFontSize(18);
+    doc.text('Facture', 14, 22);
+    doc.setFontSize(11);
+    doc.text(`Date: ${sale.dateDVente ? format(new Date(sale.dateDVente), 'dd/MM/yyyy') : 'N/A'}`, 14, 32);
+    doc.text(`Facture #: ${sale.id}`, 14, 38);
+
+    // Informations sur le client
+    doc.setFontSize(12);
+    doc.text('Client:', 14, 50);
+    doc.setFontSize(10);
+    doc.text(sale.clientNom || 'N/A', 14, 56);
+
+    // Tableau des produits
+    const invoiceBody = (sale.items || []).map(item => {
+      const product = products.find(p => p.id === item.productId);
+      return [
+        product?.nom || 'Produit inconnu',
+        item.quantite,
+        `${item.prixUnitaire.toLocaleString()} FCFA`,
+        `${item.montant.toLocaleString()} FCFA`,
+      ];
+    });
+
+    table.autoTable({
+      startY: 65,
+      head: [['Produit', 'Quantité', 'Prix Unitaire', 'Total']],
+      body: invoiceBody,
+      theme: 'striped',
+      headStyles: { fillColor: [22, 160, 133] },
+    });
+
+    // Total
+    const finalY = table.lastAutoTable.finalY;
+    doc.setFontSize(12);
+    doc.text('Total:', 14, finalY + 10);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${(sale.montantTotal || 0).toLocaleString()} FCFA`, 150, finalY + 10, { align: 'right' });
+
+    // Pied de page
+    doc.setFontSize(10);
+    doc.text('Merci pour votre achat!', 14, finalY + 30);
+
+    doc.save(`facture_${sale.id}.pdf`);
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const table = doc as jsPDFWithAutoTable;
+
+    doc.setFontSize(18);
+    doc.text('Rapport des Ventes', 14, 22);
+    doc.setFontSize(11);
+    doc.text(`Date: ${format(new Date(), 'dd/MM/yyyy')}`, 14, 30);
+
+    const head = [['Date', 'Client', 'Produit(s)', 'Artisan', 'Qté', 'Total']];
+    const body = filteredSales.map(sale => {
+      const firstProduct = sale.items[0]?.product?.nom || 'N/A';
+      const artisanName = `${sale.artisan?.prenom} ${sale.artisan?.nom}`;
+      const totalQuantity = sale.items.reduce((acc, item) => acc + item.quantite, 0);
+      return [
+        sale.dateDVente ? format(new Date(sale.dateDVente), 'dd/MM/yyyy') : '-',
+        sale.clientNom || '-',
+        firstProduct + (sale.items.length > 1 ? ` +${sale.items.length - 1}` : ''),
+        artisanName,
+        totalQuantity,
+        `${(sale.montantTotal || 0).toLocaleString()} FCFA`,
+      ];
+    });
+
+    table.autoTable({
+      startY: 40,
+      head,
+      body,
+      theme: 'grid',
+      headStyles: { fillColor: [41, 128, 185] },
+    });
+
+    doc.save('rapport_ventes.pdf');
   };
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between items-center">
           <CardTitle>Liste des Ventes</CardTitle>
-          <Button onClick={onAdd}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nouvelle vente
-          </Button>
+          <div className="flex space-x-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Rechercher..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Button onClick={onAdd} className="btn-primary">
+              <Plus className="mr-2 h-4 w-4" />
+              Ajouter une vente
+            </Button>
+            <Button onClick={exportToPDF} variant="outline">
+              <FileText className="mr-2 h-4 w-4" />
+              Exporter en PDF
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 flex items-center gap-2">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher une vente..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm"
-          />
-        </div>
-
-        <div className="rounded-md border">
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>N° Facture</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Client</TableHead>
-                <TableHead>Produit</TableHead>
+                <TableHead>Produit(s)</TableHead>
                 <TableHead>Artisan</TableHead>
-                <TableHead>Quantité</TableHead>
-                <TableHead>Montant</TableHead>
+                <TableHead>Quantité totale</TableHead>
+                <TableHead>Montant Total</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredSales.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    {sales.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <FileText className="h-8 w-8 text-muted-foreground/50" />
-                        <p>Aucune vente enregistrée</p>
-                      </div>
-                    ) : (
-                      <p>Aucune vente ne correspond à votre recherche</p>
-                    )}
+                  <TableCell colSpan={7} className="text-center">
+                    Aucune vente trouvée.
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredSales.map((sale) => {
-                  const totalQuantity = sale.items?.reduce((sum, item) => sum + (item.quantite || 0), 0) || 0;
-                  const firstProductName = sale.items?.[0]?.product?.nom || 'Produit inconnu';
-                  const additionalItemsCount = sale.items?.length > 1 ? sale.items.length - 1 : 0;
-                  const artisanName = sale.artisan 
-                    ? `${sale.artisan.prenom || ''} ${sale.artisan.nom || ''}`.trim() 
-                    : 'Artisan inconnu';
-                  
+                filteredSales.map((sale: EnhancedSale) => {
+                  const firstProductName = sale.items[0]?.product?.nom || 'N/A';
+                  const additionalItemsCount = sale.items.length - 1;
+                  const artisanName = `${sale.artisan?.prenom} ${sale.artisan?.nom}`;
+                  const totalQuantity = sale.items.reduce((acc, item) => acc + item.quantite, 0);
+
                   return (
-                    <TableRow key={sale.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">{sale.numeroFacture || '-'}</TableCell>
+                    <TableRow key={sale.id}>
                       <TableCell>
                         {sale.dateDVente ? format(new Date(sale.dateDVente), 'dd/MM/yyyy') : '-'}
                       </TableCell>
@@ -357,3 +341,4 @@ export const SaleTable: React.FC<SaleTableProps> = ({
     </Card>
   );
 };
+

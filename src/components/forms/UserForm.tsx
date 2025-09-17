@@ -31,6 +31,7 @@ import { User } from '@/types';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { toBase64 } from '@/lib/utils';
 
 const userSchema = z.object({
   // Informations de base
@@ -84,7 +85,7 @@ interface UserFormProps {
   user?: User | null;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  onSubmit: (data: Partial<User>) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -98,103 +99,66 @@ export const UserForm: React.FC<UserFormProps> = ({
   const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
-      email: user?.email || '',
-      phone: user?.phone || '',
-      role: user?.role || 'user',
-      isActive: user?.isActive ?? true,
-      address: user?.address || '',
-      city: user?.city || '',
-      postalCode: user?.postalCode || '',
-      country: user?.country || '',
-      notes: user?.notes || '',
-      avatar: user?.avatar || '',
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
       password: '',
       confirmPassword: '',
+      role: 'user',
+      isActive: true,
+      address: '',
+      city: '',
+      postalCode: '',
+      country: '',
+      notes: '',
+      avatar: '',
     },
   });
 
-  // Réinitialiser le formulaire lorsque l'utilisateur change
   useEffect(() => {
     if (user) {
       form.reset({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email,
-        phone: user.phone || '',
-        role: user.role || 'user',
-        isActive: user.isActive ?? true,
-        address: user.address || '',
-        city: user.city || '',
-        postalCode: user.postalCode || '',
-        country: user.country || '',
-        notes: user.notes || '',
-        avatar: user.avatar || '',
-        password: '',
-        confirmPassword: '',
+        firstName: user.prenom || '',
+        lastName: user.nom || '',
+        email: user.email || '',
+        phone: user.telephone || '',
+        role: user.user_type || 'user',
+        isActive: user.isActive,
+        address: user.adresse || '',
+        avatar: user.photo || '',
       });
     } else {
-      form.reset({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        role: 'user',
-        isActive: true,
-        address: '',
-        city: '',
-        postalCode: '',
-        country: '',
-        notes: '',
-        avatar: '',
-        password: '',
-        confirmPassword: '',
-      });
+      form.reset();
     }
   }, [user, form]);
 
-  const handleImageUpload = (file: File) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      form.setValue('avatar', reader.result as string, { shouldValidate: true });
-    };
-    reader.readAsDataURL(file);
+  const handleImageUpload = async (file: File) => {
+    try {
+      const base64Image = await toBase64(file);
+      form.setValue('avatar', base64Image, { shouldValidate: true });
+    } catch (error) {
+      console.error('Error converting image to base64:', error);
+      // Optionally, show a toast notification to the user
+    }
   };
-  
+
   const handleRemoveImage = () => {
     form.setValue('avatar', '', { shouldValidate: true });
   };
 
-  const handleSubmit = async (data: UserFormData) => {
-    try {
-      // Préparer les données à soumettre
-      const submitData: Omit<User, 'id' | 'createdAt' | 'updatedAt'> = {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        phone: data.phone || undefined,
-        role: data.role,
-        isActive: data.isActive,
-        address: data.address || undefined,
-        city: data.city || undefined,
-        postalCode: data.postalCode || undefined,
-        country: data.country || undefined,
-        notes: data.notes || undefined,
-        avatar: typeof data.avatar === 'string' ? data.avatar : '',
-      };
-
-      // Inclure le mot de passe uniquement s'il est fourni
-      if (data.password) {
-        submitData.password = data.password;
-      }
-
-      await onSubmit(submitData);
-      form.reset();
-      onClose();
-    } catch (error) {
-      console.error('Erreur lors de la soumission du formulaire:', error);
-    }
+  const handleFormSubmit = async (data: UserFormData) => {
+    const userData: Partial<User> = {
+      prenom: data.firstName,
+      nom: data.lastName,
+      email: data.email,
+      telephone: data.phone,
+      user_type: data.role,
+      isActive: data.isActive,
+      adresse: data.address,
+      photo: data.avatar,
+    };
+    await onSubmit(userData);
   };
 
   const handleClose = () => {
@@ -202,40 +166,40 @@ export const UserForm: React.FC<UserFormProps> = ({
     onClose();
   };
 
+  if (!isOpen) return null;
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle>
-            {user ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur'}
-          </DialogTitle>
+          <DialogTitle>{user ? 'Modifier l\'utilisateur' : 'Créer un nouvel utilisateur'}</DialogTitle>
         </DialogHeader>
-
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Colonne de gauche - Informations de base */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Informations personnelles</h3>
-                
+              {/* Colonne de gauche pour l'avatar */}
+              <div className="md:col-span-1">
                 <FormField
                   control={form.control}
                   name="avatar"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col items-center">
-                      <div className="mb-2">
+                    <FormItem>
+                      <FormLabel>Photo de profil</FormLabel>
+                      <FormControl>
                         <ImageUpload
                           currentImage={field.value as string}
                           onUpload={handleImageUpload}
                           onRemove={handleRemoveImage}
                         />
-                      </div>
-                      <FormLabel className="text-center">Photo de profil</FormLabel>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+              </div>
 
+              {/* Colonne de droite pour les informations de base */}
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="firstName"
@@ -249,7 +213,6 @@ export const UserForm: React.FC<UserFormProps> = ({
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="lastName"
@@ -263,7 +226,6 @@ export const UserForm: React.FC<UserFormProps> = ({
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="email"
@@ -271,18 +233,12 @@ export const UserForm: React.FC<UserFormProps> = ({
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="email" 
-                          placeholder="jean.dupont@example.com" 
-                          {...field}
-                          disabled={!!user}
-                        />
+                        <Input type="email" placeholder="jean.dupont@example.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="phone"
@@ -290,133 +246,104 @@ export const UserForm: React.FC<UserFormProps> = ({
                     <FormItem>
                       <FormLabel>Téléphone</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="tel" 
-                          placeholder="+33 6 12 34 56 78" 
-                          {...field}
-                        />
+                        <Input placeholder="06 12 34 56 78" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+            </div>
 
-              {/* Colonne du milieu - Rôle et statut */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Rôle et accès</h3>
-
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Rôle</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionnez un rôle" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="admin">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">Administrateur</span>
-                              <Badge variant="outline" className="ml-2">Accès complet</Badge>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="artisan">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">Artisan</span>
-                              <Badge variant="outline" className="ml-2">Accès limité</Badge>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="user">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">Utilisateur</span>
-                              <Badge variant="outline" className="ml-2">Accès restreint</Badge>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          Compte actif
-                        </FormLabel>
-                        <FormDescription>
-                          Désactivez pour empêcher la connexion de cet utilisateur
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                {!user && (
-                  <>
-                    <div className="pt-4">
-                      <h4 className="text-sm font-medium mb-2">Mot de passe</h4>
-                      <div className="space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="password"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Mot de passe</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="password" 
-                                  placeholder="••••••••" 
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="confirmPassword"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Confirmer le mot de passe</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="password" 
-                                  placeholder="••••••••" 
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-                  </>
+            {/* Section pour le mot de passe */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mot de passe</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      {user ? 'Laissez vide pour ne pas changer' : 'Minimum 6 caractères'}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </div>
+              />
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirmer le mot de passe</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-              {/* Colonne de droite - Adresse et notes */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Adresse</h3>
+            {/* Section pour les rôles et permissions */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rôle</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionnez un rôle" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="admin">
+                          <span className="font-medium">Administrateur</span>
+                        </SelectItem>
+                        <SelectItem value="artisan">
+                          <span className="font-medium">Artisan</span>
+                        </SelectItem>
+                        <SelectItem value="user">
+                          <span className="font-medium">Utilisateur</span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Statut du compte</FormLabel>
+                      <FormDescription>
+                        Les utilisateurs inactifs ne peuvent pas se connecter.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
 
+            {/* Section pour les informations supplémentaires */}
+            <div>
+              <h3 className="text-lg font-medium mb-4">Informations supplémentaires</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="address"
@@ -424,43 +351,38 @@ export const UserForm: React.FC<UserFormProps> = ({
                     <FormItem>
                       <FormLabel>Adresse</FormLabel>
                       <FormControl>
-                        <Input placeholder="123 rue de l'exemple" {...field} />
+                        <Input placeholder="123 Rue de Paris" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="postalCode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Code postal</FormLabel>
-                        <FormControl>
-                          <Input placeholder="75000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ville</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Paris" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ville</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Paris" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="postalCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Code Postal</FormLabel>
+                      <FormControl>
+                        <Input placeholder="75001" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="country"
@@ -474,7 +396,6 @@ export const UserForm: React.FC<UserFormProps> = ({
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="notes"

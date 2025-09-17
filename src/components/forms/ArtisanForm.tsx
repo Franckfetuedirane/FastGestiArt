@@ -21,17 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ArtisanProfile } from '@/types';
-import { ImageUpload } from '@/components/ui/image-upload';
-
-// Fonction utilitaire pour convertir un fichier en base64
-const toBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-  });
-};
+import { ImageUpload } from '@/components/ui/image-upload';import { toBase64 } from '@/lib/utils';
 
 const artisanSchema = z.object({
   nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),

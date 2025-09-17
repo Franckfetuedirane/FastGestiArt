@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Product, ArtisanProfile, Category } from '@/types';
 import { artisanAPI, categoryAPI } from '@/services/api';
 import { ImageUpload } from '@/components/ui/image-upload';
+import { toBase64 } from '@/lib/utils';
 
 const productSchema = z.object({
   nom: z.string()
@@ -87,33 +88,40 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 }) => {
   const [artisans, setArtisans] = useState<ArtisanProfile[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoadingData, setIsLoadingData] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Fonction pour convertir un fichier en base64
-  const toBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
-  };
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      nom: product?.nom || '',
-      description: product?.description || '',
-      categorie: product?.categorie || '',
-      prix: product?.prix || 0,
-      stock: product?.stock || 0,
-      artisanId: product?.artisanId || '',
-      image: product?.image || '',
+      nom: '',
+      description: '',
+      categorie: '',
+      prix: 0,
+      stock: 0,
+      artisanId: '',
+      image: '',
     },
   });
-  
-  // Réinitialiser le formulaire lorsque le produit change
+
+  useEffect(() => {
+    const fetchArtisansAndCategories = async () => {
+      try {
+        const [artisansData, categoriesData] = await Promise.all([
+          artisanAPI.getAll(),
+          categoryAPI.getAll(),
+        ]);
+        setArtisans(artisansData);
+        setCategories(categoriesData);
+      } catch (error) {
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de charger les artisans et les catégories.',
+          variant: 'destructive',
+        });
+      }
+    };
+    fetchArtisansAndCategories();
+  }, []);
+
   useEffect(() => {
     if (product) {
       form.reset({
@@ -138,103 +146,30 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }
   }, [product, form]);
 
-  // Charger les données nécessaires
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadData = async () => {
-      if (!isOpen) return;
-
-      setIsLoadingData(true);
-
-      try {
-        const [categoriesData, artisansData] = await Promise.all([
-          categoryAPI.getAll(),
-          artisanAPI.getAll(),
-        ]);
-
-        if (!isMounted) return;
-
-        setArtisans(artisansData);
-        setCategories(categoriesData);
-
-        const formValues: Partial<ProductFormData> = {};
-
-        if (artisansData.length > 0) {
-          const defaultArtisanId = product?.artisanId || artisansData[0]?.id || '';
-          formValues.artisanId = defaultArtisanId;
-        }
-
-        if (product?.categorie) {
-          formValues.categorie = product.categorie;
-        } else if (categoriesData.length > 0) {
-          formValues.categorie = categoriesData[0].name;
-        }
-
-        form.reset({
-          ...form.getValues(),
-          ...formValues,
-        });
-
-        if (formValues.artisanId) form.trigger('artisanId');
-        if (formValues.categorie) form.trigger('categorie');
-
-      } catch (error) {
-        console.error('Erreur lors du chargement des données:', error);
-        toast({
-          title: 'Erreur',
-          description: 'Impossible de charger les données nécessaires pour le formulaire.',
-          variant: 'destructive',
-        });
-      } finally {
-        if (isMounted) {
-          setIsLoadingData(false);
-        }
-      }
-    };
-
-    if (isOpen) {
-      loadData();
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isOpen, product, form]);
-
   const handleImageUpload = async (file: File) => {
     try {
       const base64Image = await toBase64(file);
       form.setValue('image', base64Image, { shouldValidate: true });
     } catch (error) {
       console.error('Erreur lors du téléchargement de l\'image:', error);
+      toast({
+        title: 'Erreur d\'upload',
+        description: 'Impossible de convertir l\'image.',
+        variant: 'destructive',
+      });
     }
   };
-  
+
   const handleRemoveImage = () => {
     form.setValue('image', '', { shouldValidate: true });
   };
 
-  const handleSubmit = async (formData: ProductFormData) => {
-    let loadingToast: { dismiss: () => void } | null = null;
-    
+  const handleFormSubmit = async (formData: ProductFormData) => {
     try {
-      setIsSubmitting(true);
-      
-      // Afficher un toast de chargement
-      loadingToast = toast({
-        title: 'Traitement en cours',
-        description: 'Enregistrement du produit...',
-        duration: 0, // Ne pas fermer automatiquement
-      });
-      
-      // Gérer l'upload de l'image si c'est un fichier
       let imageUrl = '';
       if (formData.image instanceof File) {
         try {
-          // Simuler un upload
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Simulation de délai
-          imageUrl = URL.createObjectURL(formData.image);
+          imageUrl = await toBase64(formData.image);
         } catch (error) {
           console.error('Erreur lors de l\'upload de l\'image:', error);
           throw new Error('Échec de l\'upload de l\'image. Veuillez réessayer.');
@@ -242,52 +177,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       } else if (typeof formData.image === 'string') {
         imageUrl = formData.image;
       }
-      
-      // Préparer les données du produit avec des valeurs par défaut pour les champs requis
+
       const productData = {
-        nom: formData.nom || 'Sans nom',
-        description: formData.description || '',
-        categorie: formData.categorie || 'Autre',
-        prix: formData.prix || 0,
-        stock: formData.stock || 0,
-        artisanId: formData.artisanId || '',
+        ...formData,
         image: imageUrl,
-        dateCreation: product?.dateCreation || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       };
-      
-      // Appeler la fonction de soumission fournie par le parent
+
       await onSubmit(productData);
-      
-      // Fermer le formulaire
-      onClose();
-      
-      // Afficher un message de succès
-      toast({
-        title: 'Succès',
-        description: product ? 'Le produit a été mis à jour avec succès.' : 'Le produit a été créé avec succès.',
-        duration: 5000,
-      });
-      
+      handleClose();
     } catch (error) {
-      console.error('Erreur lors de la soumission du formulaire:', error);
-      
-      // Afficher un message d'erreur approprié
       toast({
         title: 'Erreur',
-        description: error instanceof Error ? error.message : 'Une erreur est survenue lors de la sauvegarde du produit.',
+        description: (error as Error).message,
         variant: 'destructive',
-        duration: 5000,
       });
-      
-      // Relancer l'erreur pour que le composant parent puisse la gérer si nécessaire
-      throw error;
-    } finally {
-      // Fermer le toast de chargement
-      if (loadingToast) {
-        loadingToast.dismiss();
-      }
-      setIsSubmitting(false);
     }
   };
 
@@ -296,71 +199,26 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     onClose();
   };
 
+  if (!isOpen) return null;
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle>
-            {product ? 'Modifier le produit' : 'Nouveau produit'}
-          </DialogTitle>
+          <DialogTitle>{product ? 'Modifier le produit' : 'Créer un nouveau produit'}</DialogTitle>
         </DialogHeader>
-
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="nom"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nom du produit</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nom du produit" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Description détaillée du produit"
-                      className="resize-none"
-                      rows={3}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
-                name="categorie"
+                name="nom"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Catégorie</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner une catégorie" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.name}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Nom du produit</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Vase en argile" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -375,7 +233,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner un artisan" />
+                          <SelectValue placeholder="Sélectionnez un artisan" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -392,7 +250,51 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Décrivez le produit..."
+                      className="resize-none"
+                      rows={5}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FormField
+                control={form.control}
+                name="categorie"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Catégorie</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionnez une catégorie" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.name}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="prix"

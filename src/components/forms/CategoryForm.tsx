@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Category } from "@/types";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { useEffect } from "react";
+import { toBase64 } from '@/lib/utils';
 
 const categoryFormSchema = z.object({
   name: z.string().min(2, {
@@ -73,8 +74,12 @@ export function CategoryForm({ category, isOpen, onClose, onSubmit, isLoading }:
 
   const handleSubmit = async (data: CategoryFormValues) => {
     try {
-      // S'assurer que l'image est une chaîne (et non un objet File)
-      const imageUrl = typeof data.image === 'string' ? data.image : '';
+      let imageUrl = '';
+      if (data.image instanceof File) {
+        imageUrl = await toBase64(data.image);
+      } else {
+        imageUrl = typeof data.image === 'string' ? data.image : '';
+      }
       
       await onSubmit({
         name: data.name,
@@ -86,48 +91,45 @@ export function CategoryForm({ category, isOpen, onClose, onSubmit, isLoading }:
     }
   };
   
-  const handleImageUpload = (file: File) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      form.setValue('image', reader.result as string, { shouldValidate: true });
-    };
-    reader.readAsDataURL(file);
+  const handleImageUpload = async (file: File) => {
+    try {
+      const base64Image = await toBase64(file);
+      form.setValue('image', base64Image, { shouldValidate: true });
+    } catch (error) {
+      console.error('Error converting image to base64:', error);
+      // Optionally, show a toast notification to the user
+    }
   };
-  
+
   const handleRemoveImage = () => {
-    form.setValue('image', '', { shouldValidate: true });
+    form.setValue("image", "", { shouldValidate: true });
   };
+
+  if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            {category ? 'Modifier la catégorie' : 'Ajouter une catégorie'}
-          </DialogTitle>
+          <DialogTitle>{category ? 'Modifier la catégorie' : 'Créer une catégorie'}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nom de la catégorie</FormLabel>
+                      <FormLabel>Nom</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Ex: Bijoux artisanaux"
-                          {...field}
-                          disabled={isLoading}
-                        />
+                        <Input placeholder="Nom de la catégorie" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
                 <FormField
                   control={form.control}
                   name="description"
@@ -136,10 +138,8 @@ export function CategoryForm({ category, isOpen, onClose, onSubmit, isLoading }:
                       <FormLabel>Description</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Décrivez cette catégorie..."
+                          placeholder="Description de la catégorie"
                           className="resize-none"
-                          rows={4}
-                          disabled={isLoading}
                           {...field}
                         />
                       </FormControl>

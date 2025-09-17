@@ -150,7 +150,13 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
 };
 
 interface jsPDFWithAutoTable extends jsPDF {
-  autoTable: (options: any) => jsPDF;
+  autoTable: (options: {
+    startY: number;
+    head: string[][];
+    body: (string | number)[][];
+    theme?: 'striped' | 'grid' | 'plain';
+    headStyles?: { [key: string]: any };
+  }) => jsPDF;
 }
 
 export const InvoiceGenerator: React.FC<{ sale: Sale & { artisan?: ArtisanProfile, product?: Product } }> = ({ sale }) => {

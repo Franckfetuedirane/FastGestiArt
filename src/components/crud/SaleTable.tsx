@@ -38,8 +38,8 @@ interface AutoTableOptions {
   body: (string | number)[][];
   startY: number;
   theme?: 'striped' | 'grid' | 'plain';
-  headStyles?: { [key: string]: any };
-  didDrawPage?: (data: any) => void;
+  headStyles?: { [key: string]: string | number };
+  didDrawPage?: (data: { [key: string]: any }) => void;
 }
 
 interface jsPDFWithAutoTable extends jsPDF {
@@ -180,7 +180,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
     });
 
     // Total
-    const finalY = (doc as any).lastAutoTable.finalY;
+    const finalY = (doc as jsPDFWithAutoTable & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
     doc.setFontSize(12);
     doc.text('Total:', 14, finalY + 10);
     doc.setFontSize(12);

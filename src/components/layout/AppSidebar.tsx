@@ -12,7 +12,6 @@ import {
   LogOut,
   Palette,
   Shield,
-  Settings
 } from 'lucide-react';
 import {
   Sidebar,
@@ -67,11 +66,7 @@ const adminNavItems = [
     url: '/admin/rapports',
     icon: FileBarChart,
   },
-  {
-    title: 'Paramètres',
-    url: '/admin/parametres',
-    icon: Settings,
-  },
+
 ];
 
 // Navigation items for Artisan

@@ -32,6 +32,16 @@ import { APIConnectionStatus } from '@/components/APIConnectionStatus';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
 
+interface CustomizedLabelProps {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  percent: number;
+  index: number;
+}
+
 export const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -74,6 +84,19 @@ export const AdminDashboard: React.FC = () => {
     },
   };
 
+  const RADIAN = Math.PI / 180;
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: CustomizedLabelProps) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* API Connection Status
@@ -94,43 +117,50 @@ export const AdminDashboard: React.FC = () => {
 
         <StatsCard
           title="Ventes Totales"
-          value={stats.ventesTotales}
+          value={stats.ventesTotales.toLocaleString()}
           icon={ShoppingCart}
           trend={{ value: 8.1, label: "ce mois" }}
           iconClassName="bg-gradient-secondary"
         />
 
         <StatsCard
-          title="Artisans Actifs"
-          value={stats.nombreArtisans}
+          title="Nouveaux Clients"
+          value={stats.nouveauxClients.toLocaleString()}
           icon={Users}
+          trend={{ value: -2.5, label: "ce mois" }}
           iconClassName="bg-gradient-accent"
         />
 
         <StatsCard
-          title="Produits Disponibles"
-          value={stats.nombreProduits}
+          title="Produits Actifs"
+          value={stats.produitsActifs.toLocaleString()}
           icon={Package}
-          trend={{ value: 12.5, label: "ce mois" }}
-          iconClassName="bg-gradient-primary"
+          trend={{ value: 5, label: "nouveaux" }}
+          iconClassName="bg-gradient-muted"
         />
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Évolution des Ventes */}
-        <Card className="card-elegant">
+      {/* Main Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Ventes sur 12 mois */}
+        <Card className="lg:col-span-2 card-elegant">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" />
-              Évolution des Ventes Mensuelles
+              Ventes sur 12 mois
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
+            <ChartContainer config={chartConfig} className="h-72 w-full">
+              <ResponsiveContainer>
                 <AreaChart data={stats.ventesParMois}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <defs>
+                    <linearGradient id="colorVentes" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis
                     dataKey="mois"
                     stroke="hsl(var(--muted-foreground))"
@@ -139,24 +169,22 @@ export const AdminDashboard: React.FC = () => {
                   <YAxis
                     stroke="hsl(var(--muted-foreground))"
                     fontSize={12}
-                    tickFormatter={(value) => `${value / 1000}k`}
+                    tickFormatter={(value) => `${Number(value) / 1000}k`}
                   />
                   <Tooltip
-                    labelStyle={{ color: 'hsl(var(--foreground))' }}
+                    formatter={(value: number) => [`${value.toLocaleString()} FCFA`, 'Ventes']}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--background))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px'
                     }}
-                    formatter={(value: number) => [`${value.toLocaleString()} FCFA`, 'Montant']}
                   />
                   <Area
                     type="monotone"
                     dataKey="montant"
                     stroke="hsl(var(--primary))"
-                    fill="hsl(var(--primary))"
-                    fillOpacity={0.2}
-                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorVentes)"
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -164,20 +192,35 @@ export const AdminDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Ventes par Catégorie */}
+        {/* Répartition par catégorie */}
         <Card className="card-elegant">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <PieChart className="h-5 w-5 text-secondary" />
-              Ventes par Catégorie
+              <PieChart className="h-5 w-5 text-primary" />
+              Répartition par Catégorie
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
+            <ChartContainer config={chartConfig} className="h-72 w-full">
+              <ResponsiveContainer>
                 <RechartsPieChart>
+                  <Pie
+                    data={stats.repartitionCategories}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={renderCustomizedLabel}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="valeur"
+                    nameKey="nom"
+                  >
+                    {stats.repartitionCategories.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </e>
                   <Tooltip
-                    formatter={(value: number) => [`${value.toLocaleString()} FCFA`, 'Montant']}
+                    formatter={(value: number, name: string) => [`${value.toLocaleString()} FCFA`, name]}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--background))',
                       border: '1px solid hsl(var(--border))',
@@ -185,20 +228,6 @@ export const AdminDashboard: React.FC = () => {
                     }}
                   />
                   <Legend />
-                  <Pie
-                    data={stats.ventesParCategorie}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="montant"
-                    nameKey="categorie"
-                    label={({ categorie, percent }: any) => `${categorie} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {stats.ventesParCategorie.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
                 </RechartsPieChart>
               </ResponsiveContainer>
             </ChartContainer>
@@ -206,26 +235,26 @@ export const AdminDashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Bottom Row */}
+      {/* Bottom Row Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Ventes par Artisan */}
+        {/* Top Artisans */}
         <Card className="card-elegant">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-accent" />
-              Performance des Artisans
+              <Users className="h-5 w-5 text-primary" />
+              Top 5 Artisans
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats.ventesParArtisan} layout="horizontal">
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <ChartContainer config={chartConfig} className="h-72 w-full">
+              <ResponsiveContainer>
+                <BarChart layout="vertical" data={stats.topArtisans}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                   <XAxis
                     type="number"
                     stroke="hsl(var(--muted-foreground))"
                     fontSize={12}
-                    tickFormatter={(value) => `${value / 1000}k`}
+                    tickFormatter={(value) => `${Number(value) / 1000}k`}
                   />
                   <YAxis
                     type="category"

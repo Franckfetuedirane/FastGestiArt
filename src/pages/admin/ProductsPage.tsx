@@ -7,6 +7,7 @@ import { productAPI } from '@/services/api/productAPI';
 import { categoryAPI } from '@/services/api/categoryAPI';
 import { artisanAPI } from '@/services/api/artisanAPI';
 import { useToast } from '@/hooks/use-toast';
+import { productsAPI } from '@/services/apiService';
 
 const ProductsPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);

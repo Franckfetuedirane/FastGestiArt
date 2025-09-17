@@ -43,7 +43,7 @@ interface AutoTableOptions {
 }
 
 interface jsPDFWithAutoTable extends jsPDF {
-  autoTable: (options: AutoTableOptions) => jsPDF;
+  autoTable: (options: AutoTableOptions) => void;
 }
 
 interface SaleTableProps {

@@ -218,7 +218,7 @@ export const AdminDashboard: React.FC = () => {
                     {stats.repartitionCategories.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
-                  </e>
+                  </Pie>
                   <Tooltip
                     formatter={(value: number, name: string) => [`${value.toLocaleString()} FCFA`, name]}
                     contentStyle={{

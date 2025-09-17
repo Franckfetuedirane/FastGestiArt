@@ -13,6 +13,10 @@ interface ReportGeneratorProps {
   dateRange?: { start: string; end: string };
 }
 
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: any) => jsPDF;
+}
+
 export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
   type,
   data,
@@ -23,7 +27,7 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
 
   const generatePDF = async () => {
     try {
-      const doc = new jsPDF();
+      const doc = new jsPDF() as jsPDFWithAutoTable;
       
       // Header
       doc.setFontSize(20);
@@ -77,7 +81,7 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         case 'sales':
           if (Array.isArray(data)) {
             const salesData = data as Sale[];
-            (doc as jsPDFWithAutoTable).autoTable({
+            doc.autoTable({
               startY: yPosition,
               head: [['ID', 'Date', 'Client', 'Montant Total']],
               body: salesData.map(sale => [
@@ -93,7 +97,7 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         case 'artisans':
           if (Array.isArray(data)) {
             const artisansData = data as ArtisanProfile[];
-            (doc as jsPDFWithAutoTable).autoTable({
+            doc.autoTable({
               startY: yPosition,
               head: [['Nom', 'Spécialité', 'Téléphone', 'Email']],
               body: artisansData.map(artisan => [
@@ -109,7 +113,7 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         case 'products':
           if (Array.isArray(data)) {
             const productsData = data as Product[];
-            (doc as jsPDFWithAutoTable).autoTable({
+            doc.autoTable({
               startY: yPosition,
               head: [['Nom', 'Catégorie', 'Prix', 'Stock']],
               body: productsData.map(product => [
@@ -148,16 +152,6 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
     </Button>
   );
 };
-
-interface jsPDFWithAutoTable extends jsPDF {
-  autoTable: (options: {
-    startY: number;
-    head: string[][];
-    body: (string | number)[][];
-    theme?: 'striped' | 'grid' | 'plain';
-    headStyles?: { [key: string]: any };
-  }) => jsPDF;
-}
 
 export const InvoiceGenerator: React.FC<{ sale: Sale & { artisan?: ArtisanProfile, product?: Product } }> = ({ sale }) => {
   const { toast } = useToast();
